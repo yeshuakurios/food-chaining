@@ -811,6 +811,25 @@ small {
   width: auto;
 }
 
+.gender-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.gender-toggle-btn {
+  width: auto;
+  flex: 1;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.gender-toggle-btn[aria-pressed="true"] {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #fff;
+  border-color: transparent;
+}
+
 .score-legend {
   display: grid;
   gap: 0.35rem;
@@ -867,13 +886,16 @@ dialog#addChildDialog form {
 
 .onboarding-shell {
   min-height: 100vh;
-  display: grid;
   place-items: center;
   padding: 2rem 1rem;
   background:
     radial-gradient(circle at top left, rgba(255, 209, 102, 0.28), transparent 32%),
     radial-gradient(circle at top right, rgba(124, 92, 255, 0.2), transparent 28%),
     linear-gradient(145deg, #fff8f4 0%, #fff2fb 45%, #eef4ff 100%);
+}
+
+.onboarding-shell:not([hidden]) {
+  display: grid;
 }
 
 .onboarding-card {

@@ -117,6 +117,10 @@ const confirmAddChildBtn = document.getElementById("confirmAddChildBtn");
 const childFormStep = document.getElementById("childFormStep");
 const childConfirmStep = document.getElementById("childConfirmStep");
 const childConfirmSummary = document.getElementById("childConfirmSummary");
+const childGenderInput = document.getElementById("childGender");
+const childGenderToggle = document.getElementById("childGenderToggle");
+const childGenderButtons = Array.from(childGenderToggle.querySelectorAll(".gender-toggle-btn"));
+
 
 if (childDobInput) {
   childDobInput.max = getTodayIsoDate();
@@ -149,6 +153,11 @@ childForm.addEventListener("submit", (event) => {
   }
   childDobInput.setCustomValidity("");
 
+  if (!childGenderInput.value) {
+    alert("Please select the child's gender (M or F).");
+    return;
+  }
+
   const meals = {
     breakfast: parseFoods(document.getElementById("breakfastFoods").value, "breakfast"),
     lunch: parseFoods(document.getElementById("lunchFoods").value, "lunch"),
@@ -160,7 +169,7 @@ childForm.addEventListener("submit", (event) => {
     id: crypto.randomUUID(),
     name: document.getElementById("childName").value.trim(),
     dob,
-    gender: document.getElementById("childGender").value.trim(),
+    gender: childGenderInput.value,
     neurodivergent: document.getElementById("childNeuro").value === "yes",
     allergies: document.getElementById("childAllergies").value.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean),
     acceptedFoods: meals,
@@ -196,9 +205,16 @@ openAddChildBtn.addEventListener("click", () => {
   openAddChildDialog();
 });
 
+childGenderButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setChildGender(button.dataset.gender);
+  });
+});
+
 addChildDialog.addEventListener("close", () => {
   pendingChild = null;
   childForm.reset();
+  setChildGender(null);
   showChildFormStep();
 });
 
@@ -235,6 +251,7 @@ window.addEventListener("hashchange", () => {
 function openAddChildDialog() {
   pendingChild = null;
   childForm.reset();
+  setChildGender(null);
   childDobInput.max = getTodayIsoDate();
   showChildFormStep();
   if (typeof addChildDialog.showModal === "function") {
@@ -247,12 +264,20 @@ function openAddChildDialog() {
 function closeAddChildDialog() {
   pendingChild = null;
   childForm.reset();
+  setChildGender(null);
   showChildFormStep();
   if (typeof addChildDialog.close === "function") {
     addChildDialog.close();
   } else {
     addChildDialog.removeAttribute("open");
   }
+}
+
+function setChildGender(gender) {
+  childGenderInput.value = gender || "";
+  childGenderButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.gender === gender));
+  });
 }
 
 function showChildFormStep() {

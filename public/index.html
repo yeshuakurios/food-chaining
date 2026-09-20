@@ -173,7 +173,11 @@
           <div class="grid-2">
             <label>
               Gender
-              <input type="text" id="childGender" required />
+              <div class="gender-toggle" id="childGenderToggle" role="group" aria-label="Gender">
+                <button type="button" class="gender-toggle-btn" data-gender="M" aria-pressed="false">M</button>
+                <button type="button" class="gender-toggle-btn" data-gender="F" aria-pressed="false">F</button>
+              </div>
+              <input type="hidden" id="childGender" />
             </label>
             <label>
               Neurodivergence
