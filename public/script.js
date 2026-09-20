@@ -932,7 +932,8 @@ function getTodayIsoDate() {
 function formatDateForDisplay(value) {
   if (!isValidDob(value)) return "";
   // Stored DOB values are ISO YYYY-MM-DD strings; render them in the user's locale for on-screen and report display.
-  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric"
