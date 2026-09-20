@@ -277,7 +277,7 @@ function renderChain(child, meal, chainIndex, chain) {
       <div class="chain-steps">${stepPills}</div>
       <div class="status"><span class="status-dot"></span>Current step: ${escapeHtml(chain.steps[currentStep])} · Stage: ${stageText}</div>
       <div class="log-row">
-        <select class="stageSelect" data-child-id="${child.id}" data-meal="${meal}" data-chain-index="${chainIndex}">${options}</select>
+        <select class="stageSelect" aria-label="Stage reached for ${escapeHtml(chain.baseFood.name)}" data-child-id="${child.id}" data-meal="${meal}" data-chain-index="${chainIndex}">${options}</select>
         <button class="logBtn" data-child-id="${child.id}" data-meal="${meal}" data-chain-index="${chainIndex}">Log Attempt</button>
       </div>
     </div>
