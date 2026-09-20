@@ -9,6 +9,51 @@ const LEVELS = [
   "Chain Champion",
   "Super Parent Questmaster"
 ];
+const MEALS = ["breakfast", "lunch", "dinner", "snacks"];
+const ACHIEVEMENTS = [
+  {
+    id: "first-log",
+    name: "First Brave Log",
+    description: "Log your first parent effort entry.",
+    emoji: "🌟",
+    qualifies: (game) => game.totalLogs >= 1
+  },
+  {
+    id: "five-logs",
+    name: "First Five Logs",
+    description: "Show up for five food-chaining attempts.",
+    emoji: "📝",
+    qualifies: (game) => game.totalLogs >= 5
+  },
+  {
+    id: "consistency-hero",
+    name: "Consistency Hero",
+    description: "Reach twenty-five total effort logs.",
+    emoji: "💪",
+    qualifies: (game) => game.totalLogs >= 25
+  },
+  {
+    id: "routine-rockstar",
+    name: "Routine Rockstar",
+    description: "Reach seventy-five total effort logs.",
+    emoji: "🎸",
+    qualifies: (game) => game.totalLogs >= 75
+  },
+  {
+    id: "three-day-streak",
+    name: "3-Day Streak",
+    description: "Log effort three days in a row.",
+    emoji: "🔥",
+    qualifies: (game) => game.streakDays >= 3
+  },
+  {
+    id: "seven-day-streak",
+    name: "7-Day Streak",
+    description: "Keep the parent streak going for a full week.",
+    emoji: "🏅",
+    qualifies: (game) => game.streakDays >= 7
+  }
+];
 
 const FOOD_DATASET = [
   { name: "oatmeal", meal: "breakfast", texture: "soft", flavor: "mild", temp: "warm", tags: ["grain"], ageMin: 1 },
@@ -37,6 +82,8 @@ const FOOD_DATASET = [
 ];
 
 let state = loadState();
+let currentPage = window.location.hash === "#achievements" ? "achievements" : "planner";
+let celebrationTimeouts = [];
 
 const parentForm = document.getElementById("parentForm");
 const childForm = document.getElementById("childForm");
@@ -47,6 +94,16 @@ const exportPdfBtn = document.getElementById("exportPdf");
 const reportPreview = document.getElementById("reportPreview");
 const heroStatus = document.getElementById("heroStatus");
 const quickStats = document.getElementById("quickStats");
+const topQuestPanel = document.getElementById("topQuestPanel");
+const plannerPage = document.getElementById("plannerPage");
+const achievementsPage = document.getElementById("achievementsPage");
+const pageTabs = Array.from(document.querySelectorAll(".page-tab"));
+const celebrationLayer = document.getElementById("celebrationLayer");
+const childDobInput = document.getElementById("childDob");
+
+if (childDobInput) {
+  childDobInput.max = getTodayIsoDate();
+}
 
 parentForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -57,6 +114,14 @@ parentForm.addEventListener("submit", (event) => {
 
 childForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  const dob = childDobInput.value;
+  if (!isValidDob(dob)) {
+    childDobInput.setCustomValidity("Enter a valid birth date that is not in the future.");
+    childDobInput.reportValidity();
+    return;
+  }
+  childDobInput.setCustomValidity("");
+
   const meals = {
     breakfast: parseFoods(document.getElementById("breakfastFoods").value),
     lunch: parseFoods(document.getElementById("lunchFoods").value),
@@ -67,7 +132,7 @@ childForm.addEventListener("submit", (event) => {
   const child = {
     id: crypto.randomUUID(),
     name: document.getElementById("childName").value.trim(),
-    age: Number(document.getElementById("childAge").value),
+    dob,
     gender: document.getElementById("childGender").value.trim(),
     neurodivergent: document.getElementById("childNeuro").value === "yes",
     allergies: document.getElementById("childAllergies").value.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean),
@@ -80,6 +145,7 @@ childForm.addEventListener("submit", (event) => {
   state.kids.push(child);
   saveState();
   childForm.reset();
+  childDobInput.max = getTodayIsoDate();
   render();
 });
 
@@ -87,20 +153,72 @@ exportPdfBtn.addEventListener("click", () => {
   window.print();
 });
 
+pageTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    setCurrentPage(button.dataset.page);
+  });
+});
+
+window.addEventListener("hashchange", () => {
+  setCurrentPage(window.location.hash === "#achievements" ? "achievements" : "planner", { syncHash: false });
+});
+
 function parseFoods(input) {
   return input
     .split(",")
     .map((piece) => piece.trim())
     .filter(Boolean)
-    .map((entry) => {
-      const [name, brand = "", pref = "3"] = entry.split("|").map((x) => x.trim());
-      return { name, brand, preference: Math.min(5, Math.max(1, Number(pref) || 3)) };
-    });
+    .map(parseFoodEntry)
+    .filter((entry) => entry.name);
+}
+
+function parseFoodEntry(entry) {
+  if (entry.includes("|")) {
+    const [name, brand = "", pref = "3"] = entry.split("|").map((x) => x.trim());
+    return { name, brand, preference: clampPreference(pref) };
+  }
+
+  const tokens = tokenizeFoodEntry(entry);
+  if (!tokens.length) {
+    return { name: "", brand: "", preference: 3 };
+  }
+
+  let preference = 3;
+  const lastToken = tokens[tokens.length - 1];
+  if (/^[1-5]$/.test(lastToken)) {
+    preference = clampPreference(lastToken);
+    tokens.pop();
+  }
+
+  let brand = "";
+  if (tokens.length > 1) {
+    const brandCandidate = tokens[tokens.length - 1];
+    const hasQuotedSegment = /["']/.test(entry);
+    if (!findFoodItem(tokens.join(" ")) && (findFoodItem(tokens.slice(0, -1).join(" ")) || hasQuotedSegment)) {
+      brand = brandCandidate;
+      tokens.pop();
+    }
+  }
+
+  return {
+    name: tokens.join(" ").trim(),
+    brand: brand.trim(),
+    preference
+  };
+}
+
+function tokenizeFoodEntry(entry) {
+  const matches = entry.match(/"([^"]+)"|'([^']+)'|\S+/g) || [];
+  return matches.map((token) => token.replace(/^['"]|['"]$/g, "").trim()).filter(Boolean);
+}
+
+function clampPreference(value) {
+  return Math.min(5, Math.max(1, Number(value) || 3));
 }
 
 function buildAllChains(child) {
   const result = {};
-  ["breakfast", "lunch", "dinner", "snacks"].forEach((meal) => {
+  MEALS.forEach((meal) => {
     result[meal] = child.acceptedFoods[meal].map((accepted) => ({
       baseFood: accepted,
       steps: buildChainForFood(child, meal, accepted)
@@ -110,6 +228,7 @@ function buildAllChains(child) {
 }
 
 function buildChainForFood(child, meal, accepted) {
+  const childAge = getChildAge(child);
   const base = findFoodItem(accepted.name, meal) || {
     name: accepted.name,
     meal,
@@ -123,7 +242,7 @@ function buildChainForFood(child, meal, accepted) {
   const pool = FOOD_DATASET
     .filter((item) => item.meal === meal)
     .filter((item) => item.name.toLowerCase() !== accepted.name.toLowerCase())
-    .filter((item) => item.ageMin <= child.age)
+    .filter((item) => item.ageMin <= childAge)
     .filter((item) => !containsAllergen(item, child.allergies));
 
   const ranked = pool
@@ -136,7 +255,7 @@ function buildChainForFood(child, meal, accepted) {
 }
 
 function findFoodItem(name, meal) {
-  return FOOD_DATASET.find((item) => item.meal === meal && item.name.toLowerCase() === name.toLowerCase());
+  return FOOD_DATASET.find((item) => (!meal || item.meal === meal) && item.name.toLowerCase() === name.toLowerCase());
 }
 
 function containsAllergen(food, allergens) {
@@ -150,10 +269,15 @@ function scoreSimilarity(base, candidate, neurodivergent) {
   if (base.texture === candidate.texture) score += neurodivergent ? 5 : 3;
   if (base.flavor === candidate.flavor) score += 3;
   if (base.temp === candidate.temp) score += 2;
+  score += (acceptedPreferenceBoost(base) + acceptedPreferenceBoost(candidate)) / 2;
 
   const overlap = base.tags.filter((tag) => candidate.tags.includes(tag)).length;
   score += overlap * 2;
   return score;
+}
+
+function acceptedPreferenceBoost(food) {
+  return Number(food.preference) > 0 ? Number(food.preference) / 2 : 0;
 }
 
 function tokenize(foodName) {
@@ -163,24 +287,101 @@ function tokenize(foodName) {
 function loadState() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
-    return {
-      parent: { name: "" },
-      kids: [],
-      game: { totalLogs: 0, streakDays: 0, lastLogDay: null }
-    };
+    return defaultState();
   }
-  return JSON.parse(raw);
+
+  try {
+    return normalizeState(JSON.parse(raw));
+  } catch {
+    return defaultState();
+  }
+}
+
+function defaultState() {
+  return {
+    parent: { name: "" },
+    kids: [],
+    game: {
+      totalLogs: 0,
+      streakDays: 0,
+      lastLogDay: null,
+      unlockedAchievements: [],
+      highestLevelIndex: 0
+    }
+  };
+}
+
+function normalizeState(rawState) {
+  const base = defaultState();
+  const nextState = {
+    parent: { name: rawState?.parent?.name || "" },
+    kids: Array.isArray(rawState?.kids) ? rawState.kids.map(normalizeChild) : [],
+    game: {
+      ...base.game,
+      ...(rawState?.game || {})
+    }
+  };
+
+  nextState.kids.forEach((child) => {
+    child.chains = buildAllChains(child);
+  });
+
+  const rewardSnapshot = getRewardSnapshot(nextState.game);
+  nextState.game.unlockedAchievements = rewardSnapshot.unlockedAchievementIds;
+  nextState.game.highestLevelIndex = Math.max(Number(nextState.game.highestLevelIndex) || 0, rewardSnapshot.levelIndex);
+  return nextState;
+}
+
+function normalizeChild(child) {
+  const acceptedFoods = {};
+  MEALS.forEach((meal) => {
+    acceptedFoods[meal] = Array.isArray(child?.acceptedFoods?.[meal])
+      ? child.acceptedFoods[meal].map((food) => ({
+        name: String(food?.name || "").trim(),
+        brand: String(food?.brand || "").trim(),
+        preference: clampPreference(food?.preference)
+      })).filter((food) => food.name)
+      : [];
+  });
+
+  return {
+    id: child?.id || crypto.randomUUID(),
+    name: String(child?.name || "").trim(),
+    dob: typeof child?.dob === "string" ? child.dob : "",
+    age: Number(child?.age) || Number(child?.ageYears) || 0,
+    gender: String(child?.gender || "").trim(),
+    neurodivergent: Boolean(child?.neurodivergent),
+    allergies: Array.isArray(child?.allergies) ? child.allergies.map((allergy) => String(allergy).trim().toLowerCase()).filter(Boolean) : [],
+    acceptedFoods,
+    chains: child?.chains || {},
+    outcomes: child?.outcomes || {}
+  };
 }
 
 function saveState() {
+  syncStateForRender();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+function syncStateForRender() {
+  state.kids.forEach((child) => {
+    child.chains = buildAllChains(child);
+    child.outcomes = child.outcomes || {};
+  });
+
+  const rewardSnapshot = getRewardSnapshot(state.game);
+  state.game.unlockedAchievements = rewardSnapshot.unlockedAchievementIds;
+  state.game.highestLevelIndex = Math.max(Number(state.game.highestLevelIndex) || 0, rewardSnapshot.levelIndex);
+}
+
 function render() {
+  syncStateForRender();
   renderHeroStatus();
+  renderTopQuestPanel();
   renderFamilySummary();
-  renderGamePanel();
+  renderAchievementsPage();
   renderReportPreview();
+  renderPageView();
 }
 
 function renderFamilySummary() {
@@ -224,8 +425,7 @@ function renderFamilySummary() {
 }
 
 function renderChildCard(child) {
-  const meals = ["breakfast", "lunch", "dinner", "snacks"];
-  const chainBlocks = meals.map((meal) => {
+  const chainBlocks = MEALS.map((meal) => {
     const chains = child.chains[meal] || [];
     const body = chains.length
       ? chains.map((chain, index) => renderChain(child, meal, index, chain)).join("")
@@ -239,7 +439,7 @@ function renderChildCard(child) {
       <div class="child-header">
         <div>
           <h3>${escapeHtml(child.name)}</h3>
-          <p class="list-muted">${child.age} years old</p>
+          <p class="list-muted">${escapeHtml(getChildAgeSummary(child))}</p>
         </div>
         <span class="meta-pill">${child.neurodivergent ? "Neurodivergent support on" : "Standard support"}</span>
       </div>
@@ -254,10 +454,7 @@ function renderChildCard(child) {
 
 function renderChain(child, meal, chainIndex, chain) {
   const chainKey = `${child.id}:${meal}:${chainIndex}`;
-  const stepProgress = state.kids
-    .find((k) => k.id === child.id)
-    .outcomes[chainKey] || chain.steps.map(() => -1);
-
+  const stepProgress = state.kids.find((k) => k.id === child.id).outcomes[chainKey] || chain.steps.map(() => -1);
   const activeStep = Math.min(stepProgress.findIndex((stageIdx) => stageIdx < STAGES.length - 1), chain.steps.length - 1);
   const currentStep = activeStep === -1 ? chain.steps.length - 1 : activeStep;
   const currentStage = stepProgress[currentStep] ?? -1;
@@ -278,15 +475,14 @@ function renderChain(child, meal, chainIndex, chain) {
       <div class="status"><span class="status-dot"></span>Current step: ${escapeHtml(chain.steps[currentStep])} · Stage: ${stageText}</div>
       <div class="log-row">
         <select class="stageSelect" aria-label="Stage reached for ${escapeHtml(chain.baseFood.name)}" data-child-id="${child.id}" data-meal="${meal}" data-chain-index="${chainIndex}">${options}</select>
-        <button class="logBtn" data-child-id="${child.id}" data-meal="${meal}" data-chain-index="${chainIndex}">Log Attempt</button>
+        <button class="logBtn" data-child-id="${child.id}" data-meal="${meal}" data-chain-index="${chainIndex}">Log Parent Effort</button>
       </div>
     </div>
   `;
 }
 
 function renderDailyPlan(child) {
-  const meals = ["breakfast", "lunch", "dinner", "snacks"];
-  const items = meals.map((meal) => {
+  const items = MEALS.map((meal) => {
     const chains = child.chains[meal] || [];
     if (!chains.length) return `<li><strong>${capitalize(meal)}:</strong> no chains yet</li>`;
 
@@ -326,13 +522,15 @@ function handleLogAttempt(event) {
 
   progress[activeStep] = Math.max(progress[activeStep], stageIdx);
 
-  awardParentEffortPoints();
+  const celebrations = awardParentEffortPoints();
   saveState();
   render();
+  triggerCelebrations(celebrations);
 }
 
 function awardParentEffortPoints() {
-  const today = new Date().toISOString().slice(0, 10);
+  const before = getRewardSnapshot(state.game);
+  const today = getTodayIsoDate();
   state.game.totalLogs += 1;
 
   if (!state.game.lastLogDay) {
@@ -347,106 +545,197 @@ function awardParentEffortPoints() {
   }
 
   state.game.lastLogDay = today;
+
+  const after = getRewardSnapshot(state.game);
+  state.game.unlockedAchievements = after.unlockedAchievementIds;
+  state.game.highestLevelIndex = Math.max(Number(state.game.highestLevelIndex) || 0, after.levelIndex);
+
+  const celebrations = [];
+  if (after.levelIndex > before.levelIndex) {
+    celebrations.push({
+      title: "Level up!",
+      message: `You reached ${after.levelTitle}.`,
+      emoji: "⭐"
+    });
+  }
+
+  after.unlockedAchievements
+    .filter((id) => !before.unlockedAchievementIds.includes(id))
+    .map((id) => ACHIEVEMENTS.find((achievement) => achievement.id === id))
+    .filter(Boolean)
+    .forEach((achievement) => {
+      celebrations.push({
+        title: "Achievement unlocked!",
+        message: `${achievement.emoji} ${achievement.name}`,
+        emoji: achievement.emoji
+      });
+    });
+
+  return celebrations;
 }
 
-function renderGamePanel() {
-  const { points, levelTitle } = getGameStats();
+function renderTopQuestPanel() {
+  if (!topQuestPanel) return;
+  const stats = getGameStats();
+  const unlockedCount = getUnlockedAchievements().length;
+  const levelProgressPercent = stats.pointsForNextLevel === 0
+    ? 100
+    : Math.round((stats.levelProgressPoints / stats.pointsForNextLevel) * 100);
 
-  const badges = [];
-  if (state.game.totalLogs >= 5) badges.push("First Five Logs");
-  if (state.game.totalLogs >= 25) badges.push("Consistency Hero");
-  if (state.game.totalLogs >= 75) badges.push("Routine Rockstar");
-  if (state.game.streakDays >= 3) badges.push("3-Day Streak");
-  if (state.game.streakDays >= 7) badges.push("7-Day Streak");
+  topQuestPanel.innerHTML = `
+    <section class="quest-shell quest-overview-shell">
+      <div class="quest-overview-grid">
+        <div class="stat-card stat-card-highlight">
+          <strong>${stats.points}</strong>
+          <span>parent XP</span>
+        </div>
+        <div class="stat-card">
+          <strong>${escapeHtml(stats.levelTitle)}</strong>
+          <span>current level</span>
+        </div>
+        <div class="stat-card">
+          <strong>${state.game.streakDays}</strong>
+          <span>streak day(s)</span>
+        </div>
+        <div class="stat-card">
+          <strong>${unlockedCount}</strong>
+          <span>achievements unlocked</span>
+        </div>
+      </div>
+      <div class="level-progress-card">
+        <div class="level-progress-copy">
+          <strong>${stats.nextLevelTitle ? `Next: ${escapeHtml(stats.nextLevelTitle)}` : "Max level reached"}</strong>
+          <span>${stats.nextLevelTitle ? `${stats.pointsToNextLevel} XP to go` : "You unlocked every current level."}</span>
+        </div>
+        <div class="level-progress-track" aria-hidden="true"><span style="width: ${levelProgressPercent}%;"></span></div>
+      </div>
+    </section>
+  `;
+}
+
+function renderAchievementsPage() {
+  const stats = getGameStats();
+  const unlockedAchievements = getUnlockedAchievements();
+  const lockedAchievements = ACHIEVEMENTS.filter((achievement) => !unlockedAchievements.some((item) => item.id === achievement.id));
 
   parentGamePanel.innerHTML = `
     <section class="quest-shell">
-     <div class="quest-header">
-      <div>
-        <h3>Effort drives the adventure</h3>
-        <p class="status-copy">Celebrate consistency, not pressure. Every logged attempt moves the story forward.</p>
+      <div class="quest-header">
+        <div>
+          <h3>Effort drives the adventure</h3>
+          <p class="status-copy">Celebrate consistency, not pressure. Every logged parent effort moves the story forward.</p>
+        </div>
+        <span class="level-chip">${escapeHtml(stats.levelTitle)}</span>
       </div>
-      <span class="level-chip">${escapeHtml(levelTitle)}</span>
-     </div>
-     <div class="quest-stats">
-      <div class="stat-card"><strong>${points}</strong><span>effort points</span></div>
-      <div class="stat-card"><strong>${state.game.streakDays}</strong><span>streak day(s)</span></div>
-      <div class="stat-card"><strong>${state.game.totalLogs}</strong><span>total logs</span></div>
-     </div>
-     <div class="badge-row">
-      ${badges.length ? badges.map((badge) => `<span class="badge">${escapeHtml(badge)}</span>`).join("") : "<p class='list-muted'>No badges yet — start logging attempts to unlock them.</p>"}
-     </div>
+      <div class="quest-stats">
+        <div class="stat-card"><strong>${stats.points}</strong><span>parent XP</span></div>
+        <div class="stat-card"><strong>${state.game.streakDays}</strong><span>streak day(s)</span></div>
+        <div class="stat-card"><strong>${state.game.totalLogs}</strong><span>total effort logs</span></div>
+      </div>
+      <div class="achievement-columns">
+        <section class="achievement-panel">
+          <h4>Unlocked achievements</h4>
+          <div class="achievement-grid">
+            ${unlockedAchievements.length
+              ? unlockedAchievements.map((achievement) => renderAchievementCard(achievement, true)).join("")
+              : renderAchievementEmptyState("No achievements yet — log parent effort to unlock your first celebration.")}
+          </div>
+        </section>
+        <section class="achievement-panel">
+          <h4>Still to unlock</h4>
+          <div class="achievement-grid">
+            ${lockedAchievements.length
+              ? lockedAchievements.map((achievement) => renderAchievementCard(achievement, false)).join("")
+              : renderAchievementEmptyState("Everything is unlocked. Amazing work!")}
+          </div>
+        </section>
+      </div>
     </section>
   `;
+}
+
+function renderAchievementCard(achievement, unlocked) {
+  return `
+    <article class="achievement-card ${unlocked ? "is-unlocked" : "is-locked"}">
+      <div class="achievement-icon" aria-hidden="true">${achievement.emoji}</div>
+      <div>
+        <strong>${escapeHtml(achievement.name)}</strong>
+        <p>${escapeHtml(achievement.description)}</p>
+      </div>
+    </article>
+  `;
+}
+
+function renderAchievementEmptyState(message) {
+  return `<p class="list-muted">${escapeHtml(message)}</p>`;
 }
 
 function renderReportPreview() {
   const { points, levelTitle } = getGameStats();
   reportPreview.innerHTML = `
     <div class="report-toolbar">
-     <div>
-      <h3>Full Report Snapshot</h3>
-      <p class="report-intro">A quick export preview of the current family setup, chaining progress, and parent rewards.</p>
-     </div>
+      <div>
+        <h3>Full Report Snapshot</h3>
+        <p class="report-intro">A quick export preview of the current family setup, chaining progress, and parent rewards.</p>
+      </div>
     </div>
     <div class="report-stack">
-     <article class="report-card">
-      <h4>Family Summary</h4>
-      <ul class="report-list">
-        <li><strong>Parent:</strong> ${escapeHtml(state.parent.name || "Not set")}</li>
-        <li><strong>Children:</strong> ${state.kids.length}</li>
-        <li><strong>Active chains:</strong> ${calculateTotalChains()}</li>
-        <li><strong>Quest level:</strong> ${escapeHtml(levelTitle)} (${points} points)</li>
-      </ul>
-     </article>
-     <div class="report-grid">
-     ${state.kids.map((child) => {
-      const meals = ["breakfast", "lunch", "dinner", "snacks"];
-      const acceptedFoodsMarkup = meals.map((meal) => {
-        const foods = child.acceptedFoods[meal] || [];
-        const acceptedText = foods.length
-          ? foods.map((food) => escapeHtml(food.name)).join(", ")
-          : "None listed";
-        return `<li><strong>Accepted ${capitalize(meal)}:</strong> ${acceptedText}</li>`;
-      }).join("");
-      const chainsMarkup = meals.map((meal) => {
-        const chains = child.chains[meal] || [];
-        const chainItems = chains.length
-          ? chains.map((chain, idx) => {
-            const key = `${child.id}:${meal}:${idx}`;
-            const progress = child.outcomes[key] || chain.steps.map(() => -1);
-            return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<div class="report-detail">Stages: ${progress.map((value) => escapeHtml(value >= 0 ? STAGES[value] : "not started")).join(" | ")}</div></li>`;
-          }).join("")
-          : "<li><strong>No chains yet.</strong></li>";
-        return `
-        <h4>${capitalize(meal)}</h4>
+      <article class="report-card">
+        <h4>Family Summary</h4>
         <ul class="report-list">
-            ${chainItems}
-          </ul>
-        `;
-      }).join("");
+          <li><strong>Parent:</strong> ${escapeHtml(state.parent.name || "Not set")}</li>
+          <li><strong>Children:</strong> ${state.kids.length}</li>
+          <li><strong>Active chains:</strong> ${calculateTotalChains()}</li>
+          <li><strong>Parent level:</strong> ${escapeHtml(levelTitle)} (${points} XP)</li>
+        </ul>
+      </article>
+      <div class="report-grid">
+      ${state.kids.map((child) => {
+        const acceptedFoodsMarkup = MEALS.map((meal) => {
+          const foods = child.acceptedFoods[meal] || [];
+          const acceptedText = foods.length
+            ? foods.map((food) => escapeHtml(food.name)).join(", ")
+            : "None listed";
+          return `<li><strong>Accepted ${capitalize(meal)}:</strong> ${acceptedText}</li>`;
+        }).join("");
+        const chainsMarkup = MEALS.map((meal) => {
+          const chains = child.chains[meal] || [];
+          const chainItems = chains.length
+            ? chains.map((chain, idx) => {
+              const key = `${child.id}:${meal}:${idx}`;
+              const progress = child.outcomes[key] || chain.steps.map(() => -1);
+              return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<div class="report-detail">Stages: ${progress.map((value) => escapeHtml(value >= 0 ? STAGES[value] : "not started")).join(" | ")}</div></li>`;
+            }).join("")
+            : "<li><strong>No chains yet.</strong></li>";
+          return `
+          <h4>${capitalize(meal)}</h4>
+          <ul class="report-list">
+              ${chainItems}
+            </ul>
+          `;
+        }).join("");
 
-      return `<article class="report-card"><h3>${escapeHtml(child.name)}</h3><ul class="report-list">${acceptedFoodsMarkup}</ul>${chainsMarkup}</article>`;
-    }).join("")}
-     </div>
-     <article class="report-card">
-      <h4>Parent Rewards</h4>
-      <ul class="report-list">
-        <li><strong>Total logs:</strong> ${state.game.totalLogs}</li>
-        <li><strong>Streak:</strong> ${state.game.streakDays} day(s)</li>
-      </ul>
-     </article>
+        return `<article class="report-card"><h3>${escapeHtml(child.name)}</h3><ul class="report-list"><li><strong>Date of birth:</strong> ${escapeHtml(formatDateForDisplay(child.dob) || "Not set")}</li><li><strong>Current age:</strong> ${escapeHtml(String(getChildAge(child)))} years old</li>${acceptedFoodsMarkup}</ul>${chainsMarkup}</article>`;
+      }).join("")}
+      </div>
+      <article class="report-card">
+        <h4>Parent Rewards</h4>
+        <ul class="report-list">
+          <li><strong>Total logs:</strong> ${state.game.totalLogs}</li>
+          <li><strong>Streak:</strong> ${state.game.streakDays} day(s)</li>
+          <li><strong>Achievements:</strong> ${getUnlockedAchievements().length}</li>
+        </ul>
+      </article>
     </div>
   `;
 }
 
 function renderHeroStatus() {
   if (!heroStatus) return;
-  const { points, levelTitle } = getGameStats();
   heroStatus.innerHTML = `
     <div class="stat-card"><strong>${state.kids.length}</strong><span>kids tracked</span></div>
     <div class="stat-card"><strong>${calculateTotalChains()}</strong><span>food chains</span></div>
-    <div class="stat-card"><strong>${points}</strong><span>${escapeHtml(levelTitle)}</span></div>
+    <div class="stat-card"><strong>${state.game.totalLogs}</strong><span>parent effort logs</span></div>
   `;
 }
 
@@ -454,13 +743,93 @@ function renderQuickStats() {
   if (!quickStats) return;
   quickStats.innerHTML = `
     <div class="stat-card"><strong>${countAcceptedFoods()}</strong><span>accepted foods</span></div>
-    <div class="stat-card"><strong>${state.game.totalLogs}</strong><span>attempts logged</span></div>
-    <div class="stat-card"><strong>${state.game.streakDays}</strong><span>day streak</span></div>
+    <div class="stat-card"><strong>${state.game.totalLogs}</strong><span>parent efforts logged</span></div>
+    <div class="stat-card"><strong>${getUnlockedAchievements().length}</strong><span>parent achievements</span></div>
   `;
 }
 
-function renderEmptyState(title, description) {
-  return `<div class="empty-state"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div>`;
+function renderPageView() {
+  const isAchievementsPage = currentPage === "achievements";
+  plannerPage.hidden = isAchievementsPage;
+  achievementsPage.hidden = !isAchievementsPage;
+  pageTabs.forEach((button) => {
+    const isActive = button.dataset.page === currentPage;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function setCurrentPage(page, options = {}) {
+  const { syncHash = true } = options;
+  currentPage = page === "achievements" ? "achievements" : "planner";
+  if (syncHash) {
+    const nextHash = currentPage === "achievements" ? "#achievements" : "#planner";
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+      return;
+    }
+  }
+  renderPageView();
+}
+
+function getUnlockedAchievements(game = state.game) {
+  return ACHIEVEMENTS.filter((achievement) => achievement.qualifies(game));
+}
+
+function getRewardSnapshot(game = state.game) {
+  const stats = getGameStats(game);
+  return {
+    ...stats,
+    unlockedAchievementIds: getUnlockedAchievements(game).map((achievement) => achievement.id)
+  };
+}
+
+function getGameStats(game = state.game) {
+  const points = game.totalLogs * 10 + Math.min(game.streakDays, 30) * 2;
+  const levelIndex = Math.min(LEVELS.length - 1, Math.floor(points / 120));
+  const levelTitle = LEVELS[levelIndex];
+  const nextLevelTitle = LEVELS[levelIndex + 1] || "";
+  const currentLevelStart = levelIndex * 120;
+  const nextLevelStart = Math.min((levelIndex + 1) * 120, LEVELS.length * 120);
+  const pointsForNextLevel = nextLevelTitle ? nextLevelStart - currentLevelStart : 0;
+  const levelProgressPoints = nextLevelTitle ? points - currentLevelStart : points;
+  const pointsToNextLevel = nextLevelTitle ? nextLevelStart - points : 0;
+  return { points, levelIndex, levelTitle, nextLevelTitle, pointsForNextLevel, levelProgressPoints, pointsToNextLevel };
+}
+
+function triggerCelebrations(celebrations) {
+  if (!celebrations.length || !celebrationLayer) return;
+  celebrationLayer.innerHTML = "";
+  celebrationLayer.classList.add("is-active");
+  celebrationTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
+  celebrationTimeouts = [];
+
+  celebrations.forEach((celebration, index) => {
+    const timeoutId = window.setTimeout(() => {
+      celebrationLayer.innerHTML = renderCelebrationMarkup(celebration);
+      celebrationLayer.classList.add("is-visible");
+    }, index * 2300);
+    celebrationTimeouts.push(timeoutId);
+  });
+
+  const hideTimeout = window.setTimeout(() => {
+    celebrationLayer.classList.remove("is-visible");
+    celebrationLayer.classList.remove("is-active");
+    celebrationLayer.innerHTML = "";
+  }, celebrations.length * 2300 + 2200);
+  celebrationTimeouts.push(hideTimeout);
+}
+
+function renderCelebrationMarkup(celebration) {
+  const confetti = Array.from({ length: 18 }, (_, index) => `<span class="confetti-piece confetti-${(index % 6) + 1}"></span>`).join("");
+  return `
+    <div class="celebration-confetti" aria-hidden="true">${confetti}</div>
+    <div class="celebration-card">
+      <div class="celebration-emoji" aria-hidden="true">${celebration.emoji}</div>
+      <strong>${escapeHtml(celebration.title)}</strong>
+      <p>${escapeHtml(celebration.message)}</p>
+    </div>
+  `;
 }
 
 function calculateTotalChains() {
@@ -471,11 +840,49 @@ function countAcceptedFoods() {
   return state.kids.reduce((total, child) => total + Object.values(child.acceptedFoods).reduce((mealTotal, foods) => mealTotal + foods.length, 0), 0);
 }
 
-function getGameStats() {
-  const points = state.game.totalLogs * 10 + Math.min(state.game.streakDays, 30) * 2;
-  const levelIndex = Math.min(LEVELS.length - 1, Math.floor(points / 120));
-  const levelTitle = LEVELS[levelIndex];
-  return { points, levelTitle };
+function getChildAge(child) {
+  if (isValidDob(child.dob)) {
+    const today = new Date();
+    const dob = new Date(`${child.dob}T00:00:00`);
+    let age = today.getFullYear() - dob.getFullYear();
+    const hasHadBirthday = today.getMonth() > dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
+    if (!hasHadBirthday) age -= 1;
+    return Math.max(age, 0);
+  }
+
+  return Math.max(Number(child.age) || 0, 0);
+}
+
+function getChildAgeSummary(child) {
+  const age = getChildAge(child);
+  if (isValidDob(child.dob)) {
+    return `${formatDateForDisplay(child.dob)} · ${age} year${age === 1 ? "" : "s"} old`;
+  }
+  return `${age} year${age === 1 ? "" : "s"} old`;
+}
+
+function isValidDob(dob) {
+  if (!dob) return false;
+  const parsed = new Date(`${dob}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return dob <= getTodayIsoDate();
+}
+
+function getTodayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatDateForDisplay(value) {
+  if (!isValidDob(value)) return "";
+  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function renderEmptyState(title, description) {
+  return `<div class="empty-state"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div>`;
 }
 
 function capitalize(text) {
@@ -492,3 +899,4 @@ function escapeHtml(input) {
 }
 
 render();
+setCurrentPage(currentPage, { syncHash: false });
