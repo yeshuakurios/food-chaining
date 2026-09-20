@@ -1,13 +1,13 @@
 const STORAGE_KEY = "foodChainingAdventureV1";
 const STAGES = ["touch", "play with", "smell", "lick", "nibble", "bite", "swallow", "ate"];
 const LEVELS = [
-  "Tiny Taster",
-  "Snack Scout",
-  "Texture Tracker",
-  "Flavor Explorer",
-  "Meal Adventurer",
-  "Chain Champion",
-  "Super Parent Questmaster"
+  "New Parent Explorer",
+  "Patient Parent",
+  "Consistent Caregiver",
+  "Mealtime Coach",
+  "Food Chaining Pro",
+  "Family Feeding Champion",
+  "Legendary Food Chaining Parent"
 ];
 const MEALS = ["breakfast", "lunch", "dinner", "snacks"];
 const ACHIEVEMENTS = [
@@ -19,11 +19,25 @@ const ACHIEVEMENTS = [
     qualifies: (game) => game.totalLogs >= 1
   },
   {
+    id: "three-logs",
+    name: "Getting Started",
+    description: "Reach three total effort logs.",
+    emoji: "🌱",
+    qualifies: (game) => game.totalLogs >= 3
+  },
+  {
     id: "five-logs",
     name: "First Five Logs",
     description: "Show up for five food-chaining attempts.",
     emoji: "📝",
     qualifies: (game) => game.totalLogs >= 5
+  },
+  {
+    id: "ten-logs",
+    name: "Ten Strong",
+    description: "Reach ten total effort logs.",
+    emoji: "🔟",
+    qualifies: (game) => game.totalLogs >= 10
   },
   {
     id: "consistency-hero",
@@ -33,11 +47,53 @@ const ACHIEVEMENTS = [
     qualifies: (game) => game.totalLogs >= 25
   },
   {
+    id: "fifty-logs",
+    name: "Halfway Century",
+    description: "Reach fifty total effort logs.",
+    emoji: "🎯",
+    qualifies: (game) => game.totalLogs >= 50
+  },
+  {
     id: "routine-rockstar",
     name: "Routine Rockstar",
     description: "Reach seventy-five total effort logs.",
     emoji: "🎸",
     qualifies: (game) => game.totalLogs >= 75
+  },
+  {
+    id: "century-club",
+    name: "Century Club",
+    description: "Reach one hundred total effort logs.",
+    emoji: "💯",
+    qualifies: (game) => game.totalLogs >= 100
+  },
+  {
+    id: "logs-150",
+    name: "Seasoned Supporter",
+    description: "Reach one hundred fifty total effort logs.",
+    emoji: "🍽️",
+    qualifies: (game) => game.totalLogs >= 150
+  },
+  {
+    id: "logs-200",
+    name: "Double Century",
+    description: "Reach two hundred total effort logs.",
+    emoji: "🏆",
+    qualifies: (game) => game.totalLogs >= 200
+  },
+  {
+    id: "logs-300",
+    name: "Tireless Advocate",
+    description: "Reach three hundred total effort logs.",
+    emoji: "🦾",
+    qualifies: (game) => game.totalLogs >= 300
+  },
+  {
+    id: "logs-500",
+    name: "Food Chaining Legend",
+    description: "Reach five hundred total effort logs.",
+    emoji: "👑",
+    qualifies: (game) => game.totalLogs >= 500
   },
   {
     id: "three-day-streak",
@@ -47,11 +103,53 @@ const ACHIEVEMENTS = [
     qualifies: (game) => game.streakDays >= 3
   },
   {
+    id: "five-day-streak",
+    name: "5-Day Streak",
+    description: "Keep the parent streak going for five days.",
+    emoji: "🔥",
+    qualifies: (game) => game.streakDays >= 5
+  },
+  {
     id: "seven-day-streak",
     name: "7-Day Streak",
     description: "Keep the parent streak going for a full week.",
     emoji: "🏅",
     qualifies: (game) => game.streakDays >= 7
+  },
+  {
+    id: "fourteen-day-streak",
+    name: "2-Week Streak",
+    description: "Keep the parent streak going for two weeks.",
+    emoji: "🥈",
+    qualifies: (game) => game.streakDays >= 14
+  },
+  {
+    id: "twentyone-day-streak",
+    name: "3-Week Streak",
+    description: "Keep the parent streak going for three weeks.",
+    emoji: "🥇",
+    qualifies: (game) => game.streakDays >= 21
+  },
+  {
+    id: "thirty-day-streak",
+    name: "1-Month Streak",
+    description: "Keep the parent streak going for a full month.",
+    emoji: "🏵️",
+    qualifies: (game) => game.streakDays >= 30
+  },
+  {
+    id: "sixty-day-streak",
+    name: "2-Month Streak",
+    description: "Keep the parent streak going for two months.",
+    emoji: "🎖️",
+    qualifies: (game) => game.streakDays >= 60
+  },
+  {
+    id: "hundred-day-streak",
+    name: "100-Day Streak",
+    description: "Keep the parent streak going for one hundred days.",
+    emoji: "🚀",
+    qualifies: (game) => game.streakDays >= 100
   }
 ];
 
@@ -82,13 +180,14 @@ const FOOD_DATASET = [
 ];
 
 let state = loadState();
-let currentPage = window.location.hash === "#planner" ? "planner" : "achievements";
+let currentPage = getPageFromHash(window.location.hash);
 let celebrationTimeouts = [];
 let pendingChild = null;
+let editingChildId = null;
 
-const parentForm = document.getElementById("parentForm");
 const childForm = document.getElementById("childForm");
 const familySummary = document.getElementById("familySummary");
+const familyOverviewBanner = document.getElementById("familyOverviewBanner");
 const dailyPlans = document.getElementById("dailyPlans");
 const parentGamePanel = document.getElementById("parentGamePanel");
 const exportPdfBtn = document.getElementById("exportPdf");
@@ -96,6 +195,7 @@ const reportPreview = document.getElementById("reportPreview");
 const heroStatus = document.getElementById("heroStatus");
 const quickStats = document.getElementById("quickStats");
 const topQuestPanel = document.getElementById("topQuestPanel");
+const homePage = document.getElementById("homePage");
 const plannerPage = document.getElementById("plannerPage");
 const achievementsPage = document.getElementById("achievementsPage");
 const pageTabs = Array.from(document.querySelectorAll(".page-tab"));
@@ -120,6 +220,11 @@ const childConfirmSummary = document.getElementById("childConfirmSummary");
 const childGenderInput = document.getElementById("childGender");
 const childGenderToggle = document.getElementById("childGenderToggle");
 const childGenderButtons = Array.from(childGenderToggle.querySelectorAll(".gender-toggle-btn"));
+const childDialogTitle = document.getElementById("childDialogTitle");
+const childFormSubmitBtn = document.getElementById("childFormSubmitBtn");
+const childConfirmTitle = document.getElementById("childConfirmTitle");
+const childConfirmSubtitle = document.getElementById("childConfirmSubtitle");
+const confirmAddChildBtnDefaultText = "Yes, Add Child";
 
 
 if (childDobInput) {
@@ -127,13 +232,6 @@ if (childDobInput) {
 }
 
 renderOnboardingGate();
-
-parentForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  state.parent.name = document.getElementById("parentName").value.trim();
-  saveState();
-  render();
-});
 
 onboardingParentForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -166,7 +264,7 @@ childForm.addEventListener("submit", (event) => {
   };
 
   pendingChild = {
-    id: crypto.randomUUID(),
+    id: editingChildId || crypto.randomUUID(),
     name: document.getElementById("childName").value.trim(),
     dob,
     gender: childGenderInput.value,
@@ -174,7 +272,7 @@ childForm.addEventListener("submit", (event) => {
     allergies: document.getElementById("childAllergies").value.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean),
     acceptedFoods: meals,
     chains: {},
-    outcomes: {}
+    outcomes: editingChildId ? getChildById(editingChildId)?.outcomes || {} : {}
   };
 
   showChildConfirmStep(pendingChild);
@@ -183,14 +281,29 @@ childForm.addEventListener("submit", (event) => {
 confirmAddChildBtn.addEventListener("click", () => {
   if (!pendingChild) return;
   pendingChild.chains = buildAllChains(pendingChild);
-  state.kids.push(pendingChild);
+
+  const addedName = pendingChild.name || "your child";
+  const wasEditing = Boolean(editingChildId);
+
+  if (wasEditing) {
+    const index = state.kids.findIndex((kid) => kid.id === editingChildId);
+    if (index !== -1) {
+      state.kids[index] = pendingChild;
+    } else {
+      state.kids.push(pendingChild);
+    }
+  } else {
+    state.kids.push(pendingChild);
+  }
+
   saveState();
   render();
   renderOnboardingChildrenSummary();
 
-  const addedName = pendingChild.name || "your child";
   closeAddChildDialog();
-  triggerCelebrations([{ title: "Child added!", message: `${addedName} is ready for playful food chains.`, emoji: "🎉" }]);
+  triggerCelebrations(wasEditing
+    ? [{ title: "Profile updated!", message: `${addedName}'s profile has been saved.`, emoji: "✅" }]
+    : [{ title: "Child added!", message: `${addedName} is ready for playful food chains.`, emoji: "🎉" }]);
 });
 
 backToChildFormBtn.addEventListener("click", () => {
@@ -205,6 +318,12 @@ openAddChildBtn.addEventListener("click", () => {
   openAddChildDialog();
 });
 
+familySummary.addEventListener("click", (event) => {
+  const editBtn = event.target.closest(".editChildBtn");
+  if (!editBtn) return;
+  openEditChildDialog(editBtn.dataset.childId);
+});
+
 childGenderButtons.forEach((button) => {
   button.addEventListener("click", () => {
     setChildGender(button.dataset.gender);
@@ -213,9 +332,11 @@ childGenderButtons.forEach((button) => {
 
 addChildDialog.addEventListener("close", () => {
   pendingChild = null;
+  editingChildId = null;
   childForm.reset();
   setChildGender(null);
   showChildFormStep();
+  setChildDialogMode(false);
 });
 
 onboardingAddChildBtn.addEventListener("click", () => {
@@ -245,14 +366,83 @@ pageTabs.forEach((button) => {
 });
 
 window.addEventListener("hashchange", () => {
-  setCurrentPage(window.location.hash === "#planner" ? "planner" : "achievements", { syncHash: false });
+  setCurrentPage(getPageFromHash(window.location.hash), { syncHash: false });
 });
+
+function getPageFromHash(hash) {
+  if (hash === "#planner") return "planner";
+  if (hash === "#achievements") return "achievements";
+  return "home";
+}
+
+function getChildById(childId) {
+  return state.kids.find((kid) => kid.id === childId);
+}
+
+function setChildDialogMode(isEditing) {
+  if (childDialogTitle) {
+    childDialogTitle.textContent = isEditing ? "Edit Child Profile" : "Add a Child";
+  }
+  if (childFormSubmitBtn) {
+    childFormSubmitBtn.textContent = isEditing ? "Review Changes" : "Review & Add Child";
+  }
+  if (childConfirmTitle) {
+    childConfirmTitle.textContent = isEditing ? "Confirm changes" : "Confirm new child";
+  }
+  if (childConfirmSubtitle) {
+    childConfirmSubtitle.textContent = isEditing
+      ? "Double-check the details below, then confirm to save this child's profile."
+      : "Double-check the details below, then confirm to add this child to your family.";
+  }
+  if (confirmAddChildBtn) {
+    confirmAddChildBtn.textContent = isEditing ? "Yes, Save Changes" : confirmAddChildBtnDefaultText;
+  }
+}
+
+function fillChildForm(child) {
+  document.getElementById("childName").value = child.name || "";
+  childDobInput.value = child.dob || "";
+  setChildGender(child.gender || null);
+  document.getElementById("childNeuro").value = child.neurodivergent ? "yes" : "no";
+  document.getElementById("childAllergies").value = (child.allergies || []).join(", ");
+  MEALS.forEach((meal) => {
+    const textareaId = meal === "snacks" ? "snackFoods" : `${meal}Foods`;
+    const textarea = document.getElementById(textareaId);
+    if (!textarea) return;
+    textarea.value = (child.acceptedFoods[meal] || []).map(formatFoodEntryForEdit).join(", ");
+  });
+}
+
+function formatFoodEntryForEdit(food) {
+  const name = food.name.includes(" ") ? `"${food.name}"` : food.name;
+  const brand = food.brand ? ` ${food.brand.includes(" ") ? `"${food.brand}"` : food.brand}` : "";
+  return `${name}${brand} ${food.preference}`;
+}
+
+function openEditChildDialog(childId) {
+  const child = getChildById(childId);
+  if (!child) return;
+  pendingChild = null;
+  editingChildId = childId;
+  childForm.reset();
+  fillChildForm(child);
+  childDobInput.max = getTodayIsoDate();
+  setChildDialogMode(true);
+  showChildFormStep();
+  if (typeof addChildDialog.showModal === "function") {
+    addChildDialog.showModal();
+  } else {
+    addChildDialog.setAttribute("open", "");
+  }
+}
 
 function openAddChildDialog() {
   pendingChild = null;
+  editingChildId = null;
   childForm.reset();
   setChildGender(null);
   childDobInput.max = getTodayIsoDate();
+  setChildDialogMode(false);
   showChildFormStep();
   if (typeof addChildDialog.showModal === "function") {
     addChildDialog.showModal();
@@ -263,9 +453,11 @@ function openAddChildDialog() {
 
 function closeAddChildDialog() {
   pendingChild = null;
+  editingChildId = null;
   childForm.reset();
   setChildGender(null);
   showChildFormStep();
+  setChildDialogMode(false);
   if (typeof addChildDialog.close === "function") {
     addChildDialog.close();
   } else {
@@ -592,7 +784,7 @@ function renderFamilySummary() {
     <div class="summary-banner">
       <div>
         <strong>${escapeHtml(state.parent.name || "Welcome")}</strong>
-        <p>${state.parent.name ? "Your family dashboard is ready for gentle food chaining wins." : "Add a parent profile to personalize your planner."}</p>
+        <p>${state.parent.name ? "Your family dashboard is ready for gentle food chaining wins." : "Add a child to personalize your planner."}</p>
       </div>
       <div class="summary-grid">
         <span class="summary-chip">${childCount} ${childCount === 1 ? "child" : "children"}</span>
@@ -602,12 +794,13 @@ function renderFamilySummary() {
   `;
 
   if (!state.kids.length) {
-    familySummary.innerHTML = `${summaryBanner}${renderEmptyState("No children added yet", "Add your first child to unlock personalized food chains, progress tracking, and printable daily plans.")}`;
+    familyOverviewBanner.innerHTML = summaryBanner;
     dailyPlans.innerHTML = `<div class="empty-state"><h3>Daily plans will appear here</h3><p>As soon as you add accepted foods, the planner will spotlight the next gentle exposure steps for each meal.</p></div>`;
+    familySummary.innerHTML = renderEmptyState("No children added yet", "Add your first child to unlock personalized food chains, progress tracking, and printable daily plans.");
     return;
   }
 
-  familySummary.innerHTML = `${summaryBanner}<div class="dashboard-grid">${state.kids.map(renderChildCard).join("")}</div>`;
+  familyOverviewBanner.innerHTML = summaryBanner;
   dailyPlans.innerHTML = `
     <div class="section-head">
       <div>
@@ -617,6 +810,8 @@ function renderFamilySummary() {
     </div>
     <div class="dashboard-grid">${state.kids.map(renderDailyPlan).join("")}</div>
   `;
+
+  familySummary.innerHTML = `<div class="dashboard-grid">${state.kids.map(renderChildCard).join("")}</div>`;
 
   document.querySelectorAll(".logBtn").forEach((button) => {
     button.addEventListener("click", handleLogAttempt);
@@ -640,7 +835,10 @@ function renderChildCard(child) {
           <h3>${escapeHtml(child.name)}</h3>
           <p class="list-muted">${escapeHtml(getChildAgeSummary(child))}</p>
         </div>
-        <span class="meta-pill">${child.neurodivergent ? "Neurodivergent support on" : "Standard support"}</span>
+        <div class="child-header-actions">
+          <span class="meta-pill">${child.neurodivergent ? "Neurodivergent support on" : "Standard support"}</span>
+          <button type="button" class="editChildBtn btn-secondary" data-child-id="${child.id}">✏️ Edit Profile</button>
+        </div>
       </div>
       <div class="child-meta">
         <span class="summary-chip">Gender: ${escapeHtml(child.gender)}</span>
@@ -948,9 +1146,9 @@ function renderQuickStats() {
 }
 
 function renderPageView() {
-  const isAchievementsPage = currentPage === "achievements";
-  plannerPage.hidden = isAchievementsPage;
-  achievementsPage.hidden = !isAchievementsPage;
+  homePage.hidden = currentPage !== "home";
+  plannerPage.hidden = currentPage !== "planner";
+  achievementsPage.hidden = currentPage !== "achievements";
   pageTabs.forEach((button) => {
     const isActive = button.dataset.page === currentPage;
     button.classList.toggle("is-active", isActive);
@@ -961,9 +1159,9 @@ function renderPageView() {
 
 function setCurrentPage(page, options = {}) {
   const { syncHash = true } = options;
-  currentPage = page === "achievements" ? "achievements" : "planner";
+  currentPage = ["home", "planner", "achievements"].includes(page) ? page : "home";
   if (syncHash) {
-    const nextHash = currentPage === "achievements" ? "#achievements" : "#planner";
+    const nextHash = `#${currentPage}`;
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
       return;

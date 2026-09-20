@@ -525,6 +525,20 @@ small {
   font-weight: 700;
 }
 
+.child-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.editChildBtn {
+  width: auto;
+  margin-top: 0;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+}
+
 .child-meta {
   margin: 0.85rem 0 1rem;
 }
@@ -1129,9 +1143,7 @@ dialog#addChildDialog form {
 
 @media print {
   .bg-orb,
-  #parentForm,
   #childForm,
-  #parentProfile,
   #onboardingPage,
   #addChildDialog,
   #questSummary,
@@ -1159,13 +1171,6 @@ dialog#addChildDialog form {
     background: #fff;
     box-shadow: none;
     border: 1px solid #ddd;
-  }
-
-  #parentProfile {
-    padding: 0;
-    background: transparent;
-    border: none;
-    box-shadow: none;
   }
 
   .hero {
