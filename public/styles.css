@@ -339,8 +339,19 @@ button {
 .child-sections,
 .report-grid,
 .page-view {
-  display: grid;
   gap: 0.9rem;
+}
+
+.grid-2,
+.meal-grid,
+.dashboard-grid,
+.child-sections,
+.report-grid {
+  display: grid;
+}
+
+.page-view:not([hidden]) {
+  display: grid;
 }
 
 .grid-2,
