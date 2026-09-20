@@ -45,6 +45,8 @@ const dailyPlans = document.getElementById("dailyPlans");
 const parentGamePanel = document.getElementById("parentGamePanel");
 const exportPdfBtn = document.getElementById("exportPdf");
 const reportPreview = document.getElementById("reportPreview");
+const heroStatus = document.getElementById("heroStatus");
+const quickStats = document.getElementById("quickStats");
 
 parentForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -175,22 +177,46 @@ function saveState() {
 }
 
 function render() {
+  renderHeroStatus();
   renderFamilySummary();
   renderGamePanel();
   renderReportPreview();
 }
 
 function renderFamilySummary() {
-  const parentLine = state.parent.name ? `<p><strong>Parent:</strong> ${escapeHtml(state.parent.name)}</p>` : "<p>No parent profile yet.</p>";
+  renderQuickStats();
+
+  const childCount = state.kids.length;
+  const chainCount = calculateTotalChains();
+  const summaryBanner = `
+    <div class="summary-banner">
+      <div>
+        <strong>${escapeHtml(state.parent.name || "Welcome")}</strong>
+        <p>${state.parent.name ? "Your family dashboard is ready for gentle food chaining wins." : "Add a parent profile to personalize your planner."}</p>
+      </div>
+      <div class="summary-grid">
+        <span class="summary-chip">${childCount} ${childCount === 1 ? "child" : "children"}</span>
+        <span class="summary-chip">${chainCount} active ${chainCount === 1 ? "chain" : "chains"}</span>
+      </div>
+    </div>
+  `;
 
   if (!state.kids.length) {
-    familySummary.innerHTML = `${parentLine}<p>No children added yet.</p>`;
-    dailyPlans.innerHTML = "";
+    familySummary.innerHTML = `${summaryBanner}${renderEmptyState("No children added yet", "Add your first child to unlock personalized food chains, progress tracking, and printable daily plans.")}`;
+    dailyPlans.innerHTML = `<div class="empty-state"><h3>Daily plans will appear here</h3><p>As soon as you add accepted foods, the planner will spotlight the next gentle exposure steps for each meal.</p></div>`;
     return;
   }
 
-  familySummary.innerHTML = parentLine + state.kids.map(renderChildCard).join("");
-  dailyPlans.innerHTML = `<h3>📅 Daily Plans</h3>${state.kids.map(renderDailyPlan).join("")}`;
+  familySummary.innerHTML = `${summaryBanner}<div class="dashboard-grid">${state.kids.map(renderChildCard).join("")}</div>`;
+  dailyPlans.innerHTML = `
+    <div class="section-head">
+      <div>
+        <span class="section-kicker">Today</span>
+        <h3>📅 Daily Plans</h3>
+      </div>
+    </div>
+    <div class="dashboard-grid">${state.kids.map(renderDailyPlan).join("")}</div>
+  `;
 
   document.querySelectorAll(".logBtn").forEach((button) => {
     button.addEventListener("click", handleLogAttempt);
@@ -203,17 +229,25 @@ function renderChildCard(child) {
     const chains = child.chains[meal] || [];
     const body = chains.length
       ? chains.map((chain, index) => renderChain(child, meal, index, chain)).join("")
-      : "<p>No accepted foods yet.</p>";
+      : "<p class='list-muted'>No accepted foods yet.</p>";
 
-    return `<h4>${capitalize(meal)}</h4>${body}`;
+    return `<section class="meal-card"><h4>${capitalize(meal)}</h4>${body}</section>`;
   }).join("");
 
   return `
     <article class="child-card">
-      <h3>${escapeHtml(child.name)} (${child.age})</h3>
-      <p><strong>Gender:</strong> ${escapeHtml(child.gender)} · <strong>Neurodivergence:</strong> ${child.neurodivergent ? "Yes" : "No"}</p>
-      <p><strong>Allergies:</strong> ${child.allergies.length ? child.allergies.map(escapeHtml).join(", ") : "None listed"}</p>
-      ${chainBlocks}
+      <div class="child-header">
+        <div>
+          <h3>${escapeHtml(child.name)}</h3>
+          <p class="list-muted">${child.age} years old</p>
+        </div>
+        <span class="meta-pill">${child.neurodivergent ? "Neurodivergent support on" : "Standard support"}</span>
+      </div>
+      <div class="child-meta">
+        <span class="summary-chip">Gender: ${escapeHtml(child.gender)}</span>
+        <span class="summary-chip">Allergies: ${child.allergies.length ? child.allergies.map(escapeHtml).join(", ") : "None listed"}</span>
+      </div>
+      <div class="child-sections">${chainBlocks}</div>
     </article>
   `;
 }
@@ -228,13 +262,18 @@ function renderChain(child, meal, chainIndex, chain) {
   const currentStep = activeStep === -1 ? chain.steps.length - 1 : activeStep;
   const currentStage = stepProgress[currentStep] ?? -1;
   const stageText = currentStage >= 0 ? STAGES[currentStage] : "not started";
+  const stepPills = chain.steps.map((step, index) => {
+    const statusClass = index < currentStep ? "completed" : index === currentStep ? "active" : "";
+    return `<span class="step-pill ${statusClass}">${escapeHtml(step)}</span>`;
+  }).join("");
 
   const options = STAGES.map((stage, idx) => `<option value="${idx}">${stage}</option>`).join("");
 
   return `
     <div class="chain-row">
-      <div><strong>${escapeHtml(chain.baseFood.name)}</strong> → ${chain.steps.map(escapeHtml).join(" → ")}</div>
-      <div class="status">Current active step: ${escapeHtml(chain.steps[currentStep])} · Current stage: ${stageText}</div>
+      <div class="chain-title">${escapeHtml(chain.baseFood.name)} chain</div>
+      <div class="chain-steps">${stepPills}</div>
+      <div class="status"><span class="status-dot"></span>Current step: ${escapeHtml(chain.steps[currentStep])} · Stage: ${stageText}</div>
       <div class="log-row">
         <select class="stageSelect" data-child-id="${child.id}" data-meal="${meal}" data-chain-index="${chainIndex}">${options}</select>
         <button class="logBtn" data-child-id="${child.id}" data-meal="${meal}" data-chain-index="${chainIndex}">Log Attempt</button>
@@ -247,7 +286,7 @@ function renderDailyPlan(child) {
   const meals = ["breakfast", "lunch", "dinner", "snacks"];
   const items = meals.map((meal) => {
     const chains = child.chains[meal] || [];
-    if (!chains.length) return `<li>${capitalize(meal)}: no chains yet</li>`;
+    if (!chains.length) return `<li><strong>${capitalize(meal)}:</strong> no chains yet</li>`;
 
     const activeFoods = chains.map((chain, chainIndex) => {
       const key = `${child.id}:${meal}:${chainIndex}`;
@@ -257,10 +296,10 @@ function renderDailyPlan(child) {
       return `${chain.steps[stepIndex]} (${chain.baseFood.name})`;
     });
 
-    return `<li>${capitalize(meal)}: ${activeFoods.map(escapeHtml).join(", ")}</li>`;
+    return `<li><strong>${capitalize(meal)}:</strong> ${activeFoods.map(escapeHtml).join(", ")}</li>`;
   }).join("");
 
-  return `<article class="child-card"><h4>${escapeHtml(child.name)}'s Plan</h4><ul>${items}</ul></article>`;
+  return `<article class="plan-card"><h4>${escapeHtml(child.name)}'s Plan</h4><ul class="plan-list">${items}</ul></article>`;
 }
 
 function handleLogAttempt(event) {
@@ -309,9 +348,7 @@ function awardParentEffortPoints() {
 }
 
 function renderGamePanel() {
-  const points = state.game.totalLogs * 10 + Math.min(state.game.streakDays, 30) * 2;
-  const levelIndex = Math.min(LEVELS.length - 1, Math.floor(points / 120));
-  const levelTitle = LEVELS[levelIndex];
+  const { points, levelTitle } = getGameStats();
 
   const badges = [];
   if (state.game.totalLogs >= 5) badges.push("First Five Logs");
@@ -321,41 +358,110 @@ function renderGamePanel() {
   if (state.game.streakDays >= 7) badges.push("7-Day Streak");
 
   parentGamePanel.innerHTML = `
-    <p><strong>Total effort points:</strong> ${points}</p>
-    <p><strong>Current level:</strong> ${escapeHtml(levelTitle)}</p>
-    <p><strong>Current streak:</strong> ${state.game.streakDays} day(s)</p>
-    <p><strong>Total logs:</strong> ${state.game.totalLogs}</p>
-    <p><strong>Badges:</strong> ${badges.length ? badges.map((b) => `<span class="badge">${escapeHtml(b)}</span>`).join("") : "No badges yet"}</p>
+    <section class="quest-shell">
+     <div class="quest-header">
+      <div>
+        <h3>Effort drives the adventure</h3>
+        <p class="status-copy">Celebrate consistency, not pressure. Every logged attempt moves the story forward.</p>
+      </div>
+      <span class="level-chip">${escapeHtml(levelTitle)}</span>
+     </div>
+     <div class="quest-stats">
+      <div class="stat-card"><strong>${points}</strong><span>effort points</span></div>
+      <div class="stat-card"><strong>${state.game.streakDays}</strong><span>streak day(s)</span></div>
+      <div class="stat-card"><strong>${state.game.totalLogs}</strong><span>total logs</span></div>
+     </div>
+     <div class="badge-row">
+      ${badges.length ? badges.map((badge) => `<span class="badge">${escapeHtml(badge)}</span>`).join("") : "<p class='list-muted'>No badges yet — start logging attempts to unlock them.</p>"}
+     </div>
+    </section>
   `;
 }
 
 function renderReportPreview() {
+  const { points, levelTitle } = getGameStats();
   reportPreview.innerHTML = `
-    <h3>Full Report Snapshot</h3>
-    <p><strong>Parent:</strong> ${escapeHtml(state.parent.name || "Not set")}</p>
-    ${state.kids.map((child) => {
+    <div class="report-toolbar">
+     <div>
+      <h3>Full Report Snapshot</h3>
+      <p class="report-intro">A quick export preview of the current family setup, chaining progress, and parent rewards.</p>
+     </div>
+    </div>
+    <div class="report-stack">
+     <article class="report-card">
+      <h4>Family Summary</h4>
+      <ul class="report-list">
+        <li><strong>Parent:</strong> ${escapeHtml(state.parent.name || "Not set")}</li>
+        <li><strong>Children:</strong> ${state.kids.length}</li>
+        <li><strong>Active chains:</strong> ${calculateTotalChains()}</li>
+        <li><strong>Quest level:</strong> ${escapeHtml(levelTitle)} (${points} points)</li>
+      </ul>
+     </article>
+     <div class="report-grid">
+     ${state.kids.map((child) => {
       const meals = ["breakfast", "lunch", "dinner", "snacks"];
       const chainsMarkup = meals.map((meal) => {
         const chains = child.chains[meal] || [];
         return `
-          <h4>${capitalize(meal)}</h4>
-          <ul>
+        <h4>${capitalize(meal)}</h4>
+        <ul class="report-list">
             ${chains.map((chain, idx) => {
               const key = `${child.id}:${meal}:${idx}`;
               const progress = child.outcomes[key] || chain.steps.map(() => -1);
-              return `<li>${escapeHtml(chain.baseFood.name)}: ${chain.steps.map(escapeHtml).join(" → ")}<br/>Stages: ${progress.map((value) => (value >= 0 ? STAGES[value] : "not started")).join(" | ")}</li>`;
+              return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<br/>Stages: ${progress.map((value) => (value >= 0 ? STAGES[value] : "not started")).join(" | ")}</li>`;
             }).join("")}
           </ul>
         `;
       }).join("");
 
-      return `<article class="child-card"><h3>${escapeHtml(child.name)}</h3>${chainsMarkup}</article>`;
+      return `<article class="report-card"><h3>${escapeHtml(child.name)}</h3>${chainsMarkup}</article>`;
     }).join("")}
-
-    <h3>Parent Rewards</h3>
-    <p>Total logs: ${state.game.totalLogs}</p>
-    <p>Streak: ${state.game.streakDays} day(s)</p>
+     </div>
+     <article class="report-card">
+      <h4>Parent Rewards</h4>
+      <ul class="report-list">
+        <li><strong>Total logs:</strong> ${state.game.totalLogs}</li>
+        <li><strong>Streak:</strong> ${state.game.streakDays} day(s)</li>
+      </ul>
+     </article>
+    </div>
   `;
+}
+
+function renderHeroStatus() {
+  const { points, levelTitle } = getGameStats();
+  heroStatus.innerHTML = `
+    <div class="stat-card"><strong>${state.kids.length}</strong><span>kids tracked</span></div>
+    <div class="stat-card"><strong>${calculateTotalChains()}</strong><span>food chains</span></div>
+    <div class="stat-card"><strong>${points}</strong><span>${escapeHtml(levelTitle)}</span></div>
+  `;
+}
+
+function renderQuickStats() {
+  quickStats.innerHTML = `
+    <div class="stat-card"><strong>${countAcceptedFoods()}</strong><span>accepted foods</span></div>
+    <div class="stat-card"><strong>${state.game.totalLogs}</strong><span>attempts logged</span></div>
+    <div class="stat-card"><strong>${state.game.streakDays}</strong><span>day streak</span></div>
+  `;
+}
+
+function renderEmptyState(title, description) {
+  return `<div class="empty-state"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p></div>`;
+}
+
+function calculateTotalChains() {
+  return state.kids.reduce((total, child) => total + Object.values(child.chains).reduce((mealTotal, chains) => mealTotal + chains.length, 0), 0);
+}
+
+function countAcceptedFoods() {
+  return state.kids.reduce((total, child) => total + Object.values(child.acceptedFoods).reduce((mealTotal, foods) => mealTotal + foods.length, 0), 0);
+}
+
+function getGameStats() {
+  const points = state.game.totalLogs * 10 + Math.min(state.game.streakDays, 30) * 2;
+  const levelIndex = Math.min(LEVELS.length - 1, Math.floor(points / 120));
+  const levelTitle = LEVELS[levelIndex];
+  return { points, levelTitle };
 }
 
 function capitalize(text) {

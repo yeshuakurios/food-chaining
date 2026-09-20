@@ -7,109 +7,160 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header>
-      <h1>🍓 Food Chaining Adventure</h1>
-      <p>Build confidence one playful food step at a time.</p>
-    </header>
+    <div class="page-shell">
+      <div class="bg-orb orb-one"></div>
+      <div class="bg-orb orb-two"></div>
+      <div class="bg-orb orb-three"></div>
 
-    <main>
-      <section class="card" id="onboarding">
-        <h2>Onboarding</h2>
-        <p>Set up your family profile and each child’s accepted foods.</p>
+      <header class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">Food chaining planner</span>
+          <h1>🍓 Food Chaining Adventure</h1>
+          <p>Build confidence one playful food step at a time with a warmer, calmer routine for every meal.</p>
+          <div class="hero-badges">
+            <span>Gentle progress</span>
+            <span>Kid-friendly structure</span>
+            <span>Celebration-first tracking</span>
+          </div>
+        </div>
 
-        <form id="parentForm">
-          <label>
-            Parent name
-            <input type="text" id="parentName" required />
-          </label>
-          <button type="submit">Save Parent Profile</button>
-        </form>
+        <aside class="hero-panel">
+          <p class="hero-panel-label">Family momentum</p>
+          <div id="heroStatus" class="hero-status"></div>
+        </aside>
+      </header>
 
-        <hr />
-
-        <form id="childForm">
-          <div class="grid-2">
-            <label>
-              Child name
-              <input type="text" id="childName" required />
-            </label>
-            <label>
-              Age
-              <input type="number" id="childAge" min="1" max="18" required />
-            </label>
+      <main>
+        <section class="card card-feature" id="onboarding">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Setup</span>
+              <h2>Onboarding</h2>
+              <p>Build your family profile and seed each child’s comfort foods to generate playful next steps.</p>
+            </div>
           </div>
 
-          <div class="grid-2">
-            <label>
-              Gender
-              <input type="text" id="childGender" required />
-            </label>
-            <label>
-              Neurodivergence
-              <select id="childNeuro" required>
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </label>
+          <div class="form-stack">
+            <form id="parentForm" class="glass-panel">
+              <label>
+                Parent name
+                <input type="text" id="parentName" required />
+              </label>
+              <button type="submit">Save Parent Profile</button>
+            </form>
+
+            <form id="childForm" class="glass-panel">
+              <div class="grid-2">
+                <label>
+                  Child name
+                  <input type="text" id="childName" required />
+                </label>
+                <label>
+                  Age
+                  <input type="number" id="childAge" min="1" max="18" required />
+                </label>
+              </div>
+
+              <div class="grid-2">
+                <label>
+                  Gender
+                  <input type="text" id="childGender" required />
+                </label>
+                <label>
+                  Neurodivergence
+                  <select id="childNeuro" required>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                  </select>
+                </label>
+              </div>
+
+              <label>
+                Allergies (ingredients, comma-separated)
+                <input type="text" id="childAllergies" placeholder="peanut, shrimp" />
+              </label>
+
+              <div class="subsection-head">
+                <h3>Accepted Foods</h3>
+                <p>Optional brand and preference score help tailor more familiar transitions.</p>
+              </div>
+
+              <div class="meal-grid">
+                <label>
+                  Breakfast
+                  <textarea id="breakfastFoods" rows="3" placeholder="oatmeal|Quaker|5, banana pancakes||4"></textarea>
+                </label>
+                <label>
+                  Lunch
+                  <textarea id="lunchFoods" rows="3" placeholder="grilled cheese||5, turkey sandwich|Boar's Head|4"></textarea>
+                </label>
+                <label>
+                  Dinner
+                  <textarea id="dinnerFoods" rows="3" placeholder="mac and cheese|Kraft|5, chicken nuggets||4"></textarea>
+                </label>
+                <label>
+                  Snacks
+                  <textarea id="snackFoods" rows="3" placeholder="apple slices||4, crackers|Ritz|5"></textarea>
+                </label>
+              </div>
+
+              <small>Format: <strong>food name | brand | preference score(1-5)</strong>. Brand can be blank.</small>
+
+              <button type="submit">Add Child</button>
+            </form>
+          </div>
+        </section>
+
+        <section class="card card-feature" id="dashboard">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Overview</span>
+              <h2>Family Dashboard</h2>
+              <p>See each child’s current chains, active exposure step, and a daily at-a-glance rhythm.</p>
+            </div>
+            <div id="quickStats" class="quick-stats"></div>
           </div>
 
-          <label>
-            Allergies (ingredients, comma-separated)
-            <input type="text" id="childAllergies" placeholder="peanut, shrimp" />
-          </label>
+          <div id="familySummary"></div>
+          <div id="dailyPlans"></div>
+        </section>
 
-          <h3>Accepted Foods (with optional brand and preference score)</h3>
-          <div class="meal-grid">
-            <label>
-              Breakfast
-              <textarea id="breakfastFoods" rows="3" placeholder="oatmeal|Quaker|5, banana pancakes||4"></textarea>
-            </label>
-            <label>
-              Lunch
-              <textarea id="lunchFoods" rows="3" placeholder="grilled cheese||5, turkey sandwich|Boar's Head|4"></textarea>
-            </label>
-            <label>
-              Dinner
-              <textarea id="dinnerFoods" rows="3" placeholder="mac and cheese|Kraft|5, chicken nuggets||4"></textarea>
-            </label>
-            <label>
-              Snacks
-              <textarea id="snackFoods" rows="3" placeholder="apple slices||4, crackers|Ritz|5"></textarea>
-            </label>
+        <section class="card card-feature" id="gameification">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Motivation</span>
+              <h2>🎮 Parent Quest</h2>
+              <p>Rewards are based on showing up and logging effort, not on outcome perfection.</p>
+            </div>
           </div>
+          <div id="parentGamePanel"></div>
+        </section>
 
-          <small>Format: <strong>food name | brand | preference score(1-5)</strong>. Brand can be blank.</small>
+        <section class="card card-feature" id="reporting">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Reporting</span>
+              <h2>Export</h2>
+              <p>Generate a polished printable summary for all kids, chains, progress stages, and parent rewards.</p>
+            </div>
+            <button id="exportPdf">Export Full PDF Report</button>
+          </div>
+          <div id="reportPreview"></div>
+        </section>
 
-          <button type="submit">Add Child</button>
-        </form>
-      </section>
-
-      <section class="card" id="dashboard">
-        <h2>Family Dashboard</h2>
-        <div id="familySummary"></div>
-        <div id="dailyPlans"></div>
-      </section>
-
-      <section class="card" id="gameification">
-        <h2>🎮 Parent Quest</h2>
-        <p>Rewards are based on logging effort, not outcome quality.</p>
-        <div id="parentGamePanel"></div>
-      </section>
-
-      <section class="card" id="reporting">
-        <h2>Export</h2>
-        <p>Export a full report for all kids, chains, outcomes, and parent rewards.</p>
-        <button id="exportPdf">Export Full PDF Report</button>
-        <div id="reportPreview"></div>
-      </section>
-
-      <section class="card" id="safety">
-        <h2>Safety</h2>
-        <p class="warning">
-          This tool is educational support and not medical advice. Always avoid known allergens and follow guidance from your clinician or feeding therapist.
-        </p>
-      </section>
-    </main>
+        <section class="card card-feature" id="safety">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Safety</span>
+              <h2>Important Reminder</h2>
+            </div>
+          </div>
+          <p class="warning">
+            This tool is educational support and not medical advice. Always avoid known allergens and follow guidance from your clinician or feeding therapist.
+          </p>
+        </section>
+      </main>
+    </div>
 
     <template id="logTemplate">
       <div class="log-row">
