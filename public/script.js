@@ -758,7 +758,7 @@ function awardParentEffortPoints() {
     });
   }
 
-  after.unlockedAchievements
+  after.unlockedAchievementIds
     .filter((id) => !before.unlockedAchievementIds.includes(id))
     .map((id) => ACHIEVEMENTS.find((achievement) => achievement.id === id))
     .filter(Boolean)
