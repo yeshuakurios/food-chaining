@@ -33,15 +33,17 @@ npm start
 
 Open http://localhost:4173 in your browser.
 
-## Deploy to Cloudflare Pages (GitHub Actions)
+## Deploy to Cloudflare Worker (GitHub Actions)
 
 Add these repository secrets in GitHub:
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 
-Then run the **Deploy to Cloudflare Pages** workflow from the Actions tab (or push to `main`).
-It deploys this repository root as a static site to the Cloudflare Pages project `food-chaining`.
+Then run the **Deploy to Cloudflare Worker** workflow from the Actions tab (or push to `main`).
+It deploys this app as a Cloudflare Worker named `food-chaining`, serving the static site assets from `/home/runner/work/food-chaining/food-chaining/public`.
+
+The default deployment URL is `https://food-chaining.<your-account-subdomain>.workers.dev`.
 
 ## Notes
 
