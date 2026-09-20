@@ -7,6 +7,31 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="onboardingPage" class="onboarding-shell" hidden>
+      <div class="onboarding-card">
+        <span class="eyebrow">Welcome</span>
+        <h1>🍓 Let's set up your family</h1>
+        <p>A quick one-time setup: tell us who you are and add your first child. You can always add more children later.</p>
+
+        <form id="onboardingParentForm" class="glass-panel">
+          <label>
+            Parent name
+            <input type="text" id="onboardingParentName" required />
+          </label>
+          <button type="submit">Save Parent Profile</button>
+        </form>
+
+        <div class="glass-panel" id="onboardingChildrenSummary">
+          <p class="list-muted">No children added yet.</p>
+        </div>
+
+        <div class="onboarding-actions">
+          <button type="button" id="onboardingAddChildBtn">➕ Add a Child</button>
+          <button type="button" id="onboardingContinueBtn" class="btn-secondary">Continue to Dashboard</button>
+        </div>
+      </div>
+    </div>
+
     <div class="page-shell">
       <div class="bg-orb orb-one"></div>
       <div class="bg-orb orb-two"></div>
@@ -39,92 +64,30 @@
               <p>Only the parent&apos;s effort earns rewards here — kids never receive scores.</p>
             </div>
             <div class="page-toggle" role="tablist" aria-label="App pages">
-              <button type="button" class="page-tab is-active" id="plannerTab" role="tab" data-page="planner" aria-selected="true" aria-controls="plannerPage">Planner</button>
-              <button type="button" class="page-tab" id="achievementsTab" role="tab" data-page="achievements" aria-selected="false" aria-controls="achievementsPage">Achievements</button>
+              <button type="button" class="page-tab is-active" id="achievementsTab" role="tab" data-page="achievements" aria-selected="true" aria-controls="achievementsPage">🏆 Achievements</button>
+              <button type="button" class="page-tab" id="plannerTab" role="tab" data-page="planner" aria-selected="false" aria-controls="plannerPage">Planner</button>
             </div>
           </div>
           <div id="topQuestPanel"></div>
         </section>
 
-        <div id="plannerPage" class="page-view" role="tabpanel" aria-labelledby="plannerTab">
-          <section class="card card-feature" id="onboarding">
+        <div id="plannerPage" class="page-view" role="tabpanel" aria-labelledby="plannerTab" hidden>
+          <section class="card card-feature" id="parentProfile">
             <div class="section-head">
               <div>
                 <span class="section-kicker">Setup</span>
-                <h2>Onboarding</h2>
-                <p>Build your family profile and seed each child’s comfort foods to generate playful next steps.</p>
+                <h2>Parent Profile</h2>
+                <p>Update the name shown across your dashboard.</p>
               </div>
             </div>
 
-            <div class="form-stack">
-              <form id="parentForm" class="glass-panel">
-                <label>
-                  Parent name
-                  <input type="text" id="parentName" required />
-                </label>
-                <button type="submit">Save Parent Profile</button>
-              </form>
-
-              <form id="childForm" class="glass-panel">
-                <div class="grid-2">
-                  <label>
-                    Child name
-                    <input type="text" id="childName" required />
-                  </label>
-                  <label>
-                    Date of birth
-                    <input type="date" id="childDob" required />
-                  </label>
-                </div>
-
-                <div class="grid-2">
-                  <label>
-                    Gender
-                    <input type="text" id="childGender" required />
-                  </label>
-                  <label>
-                    Neurodivergence
-                    <select id="childNeuro" required>
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
-                  </label>
-                </div>
-
-                <label>
-                  Allergies (ingredients, comma-separated)
-                  <input type="text" id="childAllergies" placeholder="peanut, shrimp" />
-                </label>
-
-                <div class="subsection-head">
-                  <h3>Accepted Foods</h3>
-                  <p>Use commas between foods. Inside each entry, use <strong>food</strong>, <strong>food score</strong>, or <strong>food brand score</strong>.</p>
-                </div>
-
-                <div class="meal-grid">
-                  <label>
-                    Breakfast
-                    <textarea id="breakfastFoods" rows="3" placeholder="oatmeal Quaker 5, &quot;banana pancakes&quot; 4"></textarea>
-                  </label>
-                  <label>
-                    Lunch
-                    <textarea id="lunchFoods" rows="3" placeholder="&quot;grilled cheese&quot; 5, &quot;turkey sandwich&quot; BoarsHead 4"></textarea>
-                  </label>
-                  <label>
-                    Dinner
-                    <textarea id="dinnerFoods" rows="3" placeholder="&quot;mac and cheese&quot; Kraft 5, &quot;chicken nuggets&quot; 4"></textarea>
-                  </label>
-                  <label>
-                    Snacks
-                    <textarea id="snackFoods" rows="3" placeholder="&quot;apple slices&quot; 4, crackers Ritz 5"></textarea>
-                  </label>
-                </div>
-
-                <small>Format examples: <strong>oatmeal</strong>, <strong>&quot;banana pancakes&quot; 4</strong>, <strong>crackers Ritz 5</strong>, <strong>&quot;mac and cheese&quot; &quot;Boar&apos;s Head&quot; 5</strong>. Separate foods with commas. Quote multi-word foods, and quote multi-word brands or use the legacy <strong>food|brand|score</strong> format.</small>
-
-                <button type="submit">Add Child</button>
-              </form>
-            </div>
+            <form id="parentForm" class="glass-panel">
+              <label>
+                Parent name
+                <input type="text" id="parentName" required />
+              </label>
+              <button type="submit">Save Parent Profile</button>
+            </form>
           </section>
 
           <section class="card card-feature" id="dashboard">
@@ -134,7 +97,10 @@
                 <h2>Family Dashboard</h2>
                 <p>See each child’s current chains, active exposure step, and a daily at-a-glance rhythm.</p>
               </div>
-              <div id="quickStats" class="quick-stats"></div>
+              <div class="dashboard-actions">
+                <div id="quickStats" class="quick-stats"></div>
+                <button type="button" id="openAddChildBtn">➕ Add Child</button>
+              </div>
             </div>
 
             <div id="familySummary"></div>
@@ -166,7 +132,7 @@
           </section>
         </div>
 
-        <div id="achievementsPage" class="page-view" role="tabpanel" aria-labelledby="achievementsTab" hidden>
+        <div id="achievementsPage" class="page-view" role="tabpanel" aria-labelledby="achievementsTab">
           <section class="card card-feature" id="gameification">
             <div class="section-head">
               <div>
@@ -187,6 +153,95 @@
         <button class="logBtn">Log Parent Effort</button>
       </div>
     </template>
+
+    <dialog id="addChildDialog">
+      <form id="childForm" class="glass-panel">
+        <h2>Add a Child</h2>
+
+        <div id="childFormStep">
+          <div class="grid-2">
+            <label>
+              Child name
+              <input type="text" id="childName" required />
+            </label>
+            <label>
+              Date of birth
+              <input type="date" id="childDob" required />
+            </label>
+          </div>
+
+          <div class="grid-2">
+            <label>
+              Gender
+              <input type="text" id="childGender" required />
+            </label>
+            <label>
+              Neurodivergence
+              <select id="childNeuro" required>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Allergies (ingredients, comma-separated)
+            <input type="text" id="childAllergies" placeholder="peanut, shrimp" />
+          </label>
+
+          <div class="subsection-head">
+            <h3>Accepted Foods</h3>
+            <p>Use commas between foods. Inside each entry, use <strong>food</strong>, <strong>food score</strong>, or <strong>food brand score</strong>.</p>
+          </div>
+
+          <div class="score-legend">
+            <strong>How to score (optional, 1–5):</strong>
+            <span class="score-legend-item">5 = a favorite, always eats happily</span>
+            <span class="score-legend-item">3 = default if you skip a score</span>
+            <span class="score-legend-item">1 = barely tolerates it</span>
+            <p>Scores help pick the next closest food step — they are never shown to your child.</p>
+          </div>
+
+          <div class="meal-grid">
+            <label>
+              Breakfast
+              <textarea id="breakfastFoods" rows="3" placeholder="oatmeal Quaker 5, &quot;banana pancakes&quot; 4"></textarea>
+            </label>
+            <label>
+              Lunch
+              <textarea id="lunchFoods" rows="3" placeholder="&quot;grilled cheese&quot; 5, &quot;turkey sandwich&quot; BoarsHead 4"></textarea>
+            </label>
+            <label>
+              Dinner
+              <textarea id="dinnerFoods" rows="3" placeholder="&quot;mac and cheese&quot; Kraft 5, &quot;chicken nuggets&quot; 4"></textarea>
+            </label>
+            <label>
+              Snacks
+              <textarea id="snackFoods" rows="3" placeholder="&quot;apple slices&quot; 4, crackers Ritz 5"></textarea>
+            </label>
+          </div>
+
+          <small>Format examples: <strong>oatmeal</strong>, <strong>&quot;banana pancakes&quot; 4</strong>, <strong>crackers Ritz 5</strong>, <strong>&quot;mac and cheese&quot; &quot;Boar&apos;s Head&quot; 5</strong>. Separate foods with commas. Quote multi-word foods, and quote multi-word brands or use the legacy <strong>food|brand|score</strong> format.</small>
+
+          <div class="dialog-actions">
+            <button type="button" id="cancelAddChildBtn" class="btn-secondary">Cancel</button>
+            <button type="submit">Review & Add Child</button>
+          </div>
+        </div>
+
+        <div id="childConfirmStep" hidden>
+          <div class="subsection-head">
+            <h3>Confirm new child</h3>
+            <p>Double-check the details below, then confirm to add this child to your family.</p>
+          </div>
+          <div id="childConfirmSummary" class="glass-panel"></div>
+          <div class="dialog-actions">
+            <button type="button" id="backToChildFormBtn" class="btn-secondary">Go Back</button>
+            <button type="button" id="confirmAddChildBtn">Yes, Add Child</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
 
     <div id="celebrationLayer" class="celebration-layer" aria-live="polite" aria-atomic="true"></div>
 

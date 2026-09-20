@@ -794,6 +794,116 @@ small {
   margin-bottom: 0.45rem;
 }
 
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  box-shadow: 0 12px 28px rgba(79, 60, 157, 0.1);
+}
+
+.dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.dashboard-actions button {
+  width: auto;
+}
+
+.score-legend {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.4rem;
+  border-radius: 18px;
+  background: rgba(255, 209, 102, 0.16);
+  border: 1px dashed rgba(255, 123, 84, 0.35);
+}
+
+.score-legend p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+}
+
+.score-legend-item {
+  color: var(--text);
+}
+
+dialog#addChildDialog {
+  width: min(90vw, 46rem);
+  max-height: 88vh;
+  overflow-y: auto;
+  border: none;
+  border-radius: 28px;
+  padding: 1.4rem;
+  box-shadow: var(--shadow);
+}
+
+dialog#addChildDialog::backdrop {
+  background: rgba(36, 31, 57, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+dialog#addChildDialog form {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.dialog-actions button {
+  width: auto;
+  flex: 1;
+  min-width: 8rem;
+}
+
+.onboarding-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 209, 102, 0.28), transparent 32%),
+    radial-gradient(circle at top right, rgba(124, 92, 255, 0.2), transparent 28%),
+    linear-gradient(145deg, #fff8f4 0%, #fff2fb 45%, #eef4ff 100%);
+}
+
+.onboarding-card {
+  width: min(100%, 34rem);
+  background: var(--surface-strong);
+  border-radius: 28px;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 1.1rem;
+  text-align: left;
+}
+
+.onboarding-card h1 {
+  margin: 0.2rem 0 0.4rem;
+  font-size: clamp(1.6rem, 2.5vw, 2.1rem);
+}
+
+.onboarding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.onboarding-actions button {
+  width: auto;
+  flex: 1;
+  min-width: 10rem;
+}
+
 .celebration-layer {
   position: fixed;
   inset: 0;
@@ -988,8 +1098,9 @@ small {
   .bg-orb,
   #parentForm,
   #childForm,
-  #onboarding .section-head,
-  #onboarding small,
+  #parentProfile,
+  #onboardingPage,
+  #addChildDialog,
   #questSummary,
   #exportPdf,
   .page-toggle,
@@ -1017,7 +1128,7 @@ small {
     border: 1px solid #ddd;
   }
 
-  #onboarding {
+  #parentProfile {
     padding: 0;
     background: transparent;
     border: none;
