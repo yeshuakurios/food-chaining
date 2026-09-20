@@ -56,55 +56,55 @@
       </header>
 
       <main>
-        <section class="card card-feature" id="questSummary">
-          <div class="section-head">
-            <div>
-              <span class="section-kicker">Parent progress</span>
-              <h2>⭐ XP & Levels</h2>
-              <p>Only the parent&apos;s effort earns rewards here — kids never receive scores.</p>
-            </div>
-            <div class="page-toggle" role="tablist" aria-label="App pages">
-              <button type="button" class="page-tab is-active" id="achievementsTab" role="tab" data-page="achievements" aria-selected="true" aria-controls="achievementsPage">🏆 Achievements</button>
-              <button type="button" class="page-tab" id="plannerTab" role="tab" data-page="planner" aria-selected="false" aria-controls="plannerPage">Planner</button>
-            </div>
-          </div>
-          <div id="topQuestPanel"></div>
-        </section>
+        <div class="page-toggle" role="tablist" aria-label="App pages">
+          <button type="button" class="page-tab is-active" id="homeTab" role="tab" data-page="home" aria-selected="true" aria-controls="homePage">🏠 Home</button>
+          <button type="button" class="page-tab" id="plannerTab" role="tab" data-page="planner" aria-selected="false" aria-controls="plannerPage">📅 Planner</button>
+          <button type="button" class="page-tab" id="achievementsTab" role="tab" data-page="achievements" aria-selected="false" aria-controls="achievementsPage">🏆 Achievements</button>
+        </div>
 
-        <div id="plannerPage" class="page-view" role="tabpanel" aria-labelledby="plannerTab" hidden>
-          <section class="card card-feature" id="parentProfile">
+        <div id="homePage" class="page-view" role="tabpanel" aria-labelledby="homeTab">
+          <section class="card card-feature" id="questSummary">
             <div class="section-head">
               <div>
-                <span class="section-kicker">Setup</span>
-                <h2>Parent Profile</h2>
-                <p>Update the name shown across your dashboard.</p>
+                <span class="section-kicker">Parent progress</span>
+                <h2>⭐ XP & Levels</h2>
+                <p>Only the parent&apos;s effort earns rewards here — kids never receive scores.</p>
               </div>
             </div>
-
-            <form id="parentForm" class="glass-panel">
-              <label>
-                Parent name
-                <input type="text" id="parentName" required />
-              </label>
-              <button type="submit">Save Parent Profile</button>
-            </form>
+            <div id="topQuestPanel"></div>
           </section>
 
           <section class="card card-feature" id="dashboard">
             <div class="section-head">
               <div>
                 <span class="section-kicker">Overview</span>
-                <h2>Family Dashboard</h2>
-                <p>See each child’s current chains, active exposure step, and a daily at-a-glance rhythm.</p>
+                <h2>Family Snapshot</h2>
+                <p>A quick at-a-glance look at your family before diving into the planner.</p>
               </div>
               <div class="dashboard-actions">
                 <div id="quickStats" class="quick-stats"></div>
+              </div>
+            </div>
+
+            <div id="familyOverviewBanner"></div>
+            <div id="dailyPlans"></div>
+          </section>
+        </div>
+
+        <div id="plannerPage" class="page-view" role="tabpanel" aria-labelledby="plannerTab" hidden>
+          <section class="card card-feature" id="familyDashboard">
+            <div class="section-head">
+              <div>
+                <span class="section-kicker">Planner</span>
+                <h2>Family Dashboard</h2>
+                <p>See each child’s current chains, active exposure step, and log parent effort.</p>
+              </div>
+              <div class="dashboard-actions">
                 <button type="button" id="openAddChildBtn">➕ Add Child</button>
               </div>
             </div>
 
             <div id="familySummary"></div>
-            <div id="dailyPlans"></div>
           </section>
 
           <section class="card card-feature" id="reporting">
@@ -132,7 +132,7 @@
           </section>
         </div>
 
-        <div id="achievementsPage" class="page-view" role="tabpanel" aria-labelledby="achievementsTab">
+        <div id="achievementsPage" class="page-view" role="tabpanel" aria-labelledby="achievementsTab" hidden>
           <section class="card card-feature" id="gameification">
             <div class="section-head">
               <div>
@@ -156,7 +156,7 @@
 
     <dialog id="addChildDialog">
       <form id="childForm" class="glass-panel">
-        <h2>Add a Child</h2>
+        <h2 id="childDialogTitle">Add a Child</h2>
 
         <div id="childFormStep">
           <div class="grid-2">
@@ -229,14 +229,14 @@
 
           <div class="dialog-actions">
             <button type="button" id="cancelAddChildBtn" class="btn-secondary">Cancel</button>
-            <button type="submit">Review & Add Child</button>
+            <button type="submit" id="childFormSubmitBtn">Review & Add Child</button>
           </div>
         </div>
 
         <div id="childConfirmStep" hidden>
           <div class="subsection-head">
-            <h3>Confirm new child</h3>
-            <p>Double-check the details below, then confirm to add this child to your family.</p>
+            <h3 id="childConfirmTitle">Confirm new child</h3>
+            <p id="childConfirmSubtitle">Double-check the details below, then confirm to add this child to your family.</p>
           </div>
           <div id="childConfirmSummary" class="glass-panel"></div>
           <div class="dialog-actions">
