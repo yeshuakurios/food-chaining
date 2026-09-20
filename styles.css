@@ -730,7 +730,6 @@ small {
 
 @media print {
   .bg-orb,
-  .hero,
   #onboarding,
   #gameification button,
   #exportPdf {
@@ -755,5 +754,23 @@ small {
     background: #fff;
     box-shadow: none;
     border: 1px solid #ddd;
+  }
+
+  .hero {
+    display: block;
+    max-width: none;
+    margin: 0 0 1rem;
+    padding: 0;
+  }
+
+  .hero-copy {
+    display: none !important;
+  }
+
+  .hero-panel {
+    background: #fff;
+    box-shadow: none;
+    border: 1px solid #ddd;
+    padding: 1rem;
   }
 }

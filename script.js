@@ -264,7 +264,9 @@ function renderChain(child, meal, chainIndex, chain) {
   const stageText = currentStage >= 0 ? STAGES[currentStage] : "not started";
   const stepPills = chain.steps.map((step, index) => {
     const statusClass = index < currentStep ? "completed" : index === currentStep ? "active" : "";
-    return `<span class="step-pill ${statusClass}">${escapeHtml(step)}</span>`;
+    const statusPrefix = index < currentStep ? "Done: " : index === currentStep ? "Current: " : "";
+    const statusLabel = index < currentStep ? "Completed step" : index === currentStep ? "Current step" : "Upcoming step";
+    return `<span class="step-pill ${statusClass}" aria-label="${statusLabel}: ${escapeHtml(step)}">${statusPrefix}${escapeHtml(step)}</span>`;
   }).join("");
 
   const options = STAGES.map((stage, idx) => `<option value="${idx}">${stage}</option>`).join("");
@@ -408,7 +410,7 @@ function renderReportPreview() {
             ${chains.map((chain, idx) => {
               const key = `${child.id}:${meal}:${idx}`;
               const progress = child.outcomes[key] || chain.steps.map(() => -1);
-              return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<span class="report-detail">Stages: ${progress.map((value) => (value >= 0 ? STAGES[value] : "not started")).join(" | ")}</span></li>`;
+              return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<span class="report-detail">Stages: ${progress.map((value) => escapeHtml(value >= 0 ? STAGES[value] : "not started")).join(" | ")}</span></li>`;
             }).join("")}
           </ul>
         `;
