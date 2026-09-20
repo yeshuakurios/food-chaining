@@ -1,0 +1,77 @@
+:root {
+  --bg: #fff7ef;
+  --card: #ffffff;
+  --accent: #ff7b54;
+  --accent-soft: #ffd6c8;
+  --text: #2f2a28;
+  --ok: #3ca370;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #fff8f4 0%, #fff2e6 100%);
+  color: var(--text);
+}
+
+header {
+  text-align: center;
+  padding: 1.2rem;
+  background: var(--accent);
+  color: #fff;
+}
+
+main {
+  max-width: 1100px;
+  margin: 1rem auto 2rem;
+  padding: 0 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+.meal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+label { display: block; font-weight: 700; margin-bottom: 0.6rem; }
+input, select, textarea, button {
+  width: 100%;
+  margin-top: 0.35rem;
+  border-radius: 10px;
+  border: 1px solid #f2b79e;
+  padding: 0.6rem;
+  font-size: 0.95rem;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover { filter: brightness(0.95); }
+.warning { background: #fff3e8; border-left: 5px solid #f07431; padding: 0.7rem; }
+.child-card { border: 2px dashed var(--accent-soft); border-radius: 10px; padding: 0.8rem; margin-bottom: 0.8rem; }
+.chain-row { margin: 0.5rem 0; padding: 0.6rem; background: #fff9f5; border-radius: 8px; }
+.status { font-size: 0.9rem; font-weight: 700; color: var(--ok); }
+.log-row { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; margin-top: 0.5rem; }
+.badge { display: inline-block; margin: 0.2rem; background: #ffecb7; padding: 0.25rem 0.6rem; border-radius: 999px; }
+
+@media (max-width: 760px) {
+  .grid-2, .meal-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  #onboarding, #gameification button, #exportPdf { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; border: 1px solid #ddd; }
+}
