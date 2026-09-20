@@ -2,9 +2,9 @@
   "name": "food-chaining",
   "version": "1.0.0",
   "private": true,
-  "description": "Playful food chaining planner for families",
+  "description": "Playful web app to help parents generate food chains for kids based on accepted foods.",
   "scripts": {
-    "start": "python3 -m http.server 4173",
+    "start": "python3 -m http.server 4173 --directory public",
     "test": "echo 'No automated tests configured'"
   }
 }
