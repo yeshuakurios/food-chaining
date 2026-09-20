@@ -746,7 +746,10 @@ small {
 
 @media print {
   .bg-orb,
-  #onboarding,
+  #parentForm,
+  #childForm,
+  #onboarding .section-head,
+  #onboarding small,
   #gameification button,
   #exportPdf {
     display: none !important;
@@ -770,6 +773,13 @@ small {
     background: #fff;
     box-shadow: none;
     border: 1px solid #ddd;
+  }
+
+  #onboarding {
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
 
   .hero {
