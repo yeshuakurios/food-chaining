@@ -360,6 +360,14 @@ textarea:focus {
   box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12);
 }
 
+button:focus-visible {
+  outline: 3px solid rgba(36, 31, 57, 0.22);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 6px rgba(124, 92, 255, 0.16),
+    0 16px 30px rgba(255, 93, 122, 0.28);
+}
+
 textarea {
   min-height: 7.2rem;
   resize: vertical;

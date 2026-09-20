@@ -429,6 +429,7 @@ function renderReportPreview() {
 }
 
 function renderHeroStatus() {
+  if (!heroStatus) return;
   const { points, levelTitle } = getGameStats();
   heroStatus.innerHTML = `
     <div class="stat-card"><strong>${state.kids.length}</strong><span>kids tracked</span></div>
@@ -438,6 +439,7 @@ function renderHeroStatus() {
 }
 
 function renderQuickStats() {
+  if (!quickStats) return;
   quickStats.innerHTML = `
     <div class="stat-card"><strong>${countAcceptedFoods()}</strong><span>accepted foods</span></div>
     <div class="stat-card"><strong>${state.game.totalLogs}</strong><span>attempts logged</span></div>
