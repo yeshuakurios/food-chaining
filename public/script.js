@@ -82,8 +82,9 @@ const FOOD_DATASET = [
 ];
 
 let state = loadState();
-let currentPage = window.location.hash === "#achievements" ? "achievements" : "planner";
+let currentPage = window.location.hash === "#planner" ? "planner" : "achievements";
 let celebrationTimeouts = [];
+let pendingChild = null;
 
 const parentForm = document.getElementById("parentForm");
 const childForm = document.getElementById("childForm");
@@ -101,15 +102,41 @@ const pageTabs = Array.from(document.querySelectorAll(".page-tab"));
 const celebrationLayer = document.getElementById("celebrationLayer");
 const childDobInput = document.getElementById("childDob");
 
+const onboardingPage = document.getElementById("onboardingPage");
+const onboardingParentForm = document.getElementById("onboardingParentForm");
+const onboardingParentNameInput = document.getElementById("onboardingParentName");
+const onboardingChildrenSummary = document.getElementById("onboardingChildrenSummary");
+const onboardingAddChildBtn = document.getElementById("onboardingAddChildBtn");
+const onboardingContinueBtn = document.getElementById("onboardingContinueBtn");
+
+const addChildDialog = document.getElementById("addChildDialog");
+const openAddChildBtn = document.getElementById("openAddChildBtn");
+const cancelAddChildBtn = document.getElementById("cancelAddChildBtn");
+const backToChildFormBtn = document.getElementById("backToChildFormBtn");
+const confirmAddChildBtn = document.getElementById("confirmAddChildBtn");
+const childFormStep = document.getElementById("childFormStep");
+const childConfirmStep = document.getElementById("childConfirmStep");
+const childConfirmSummary = document.getElementById("childConfirmSummary");
+
 if (childDobInput) {
   childDobInput.max = getTodayIsoDate();
 }
+
+renderOnboardingGate();
 
 parentForm.addEventListener("submit", (event) => {
   event.preventDefault();
   state.parent.name = document.getElementById("parentName").value.trim();
   saveState();
   render();
+});
+
+onboardingParentForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  state.parent.name = onboardingParentNameInput.value.trim();
+  saveState();
+  render();
+  renderOnboardingChildrenSummary();
 });
 
 childForm.addEventListener("submit", (event) => {
@@ -129,7 +156,7 @@ childForm.addEventListener("submit", (event) => {
     snacks: parseFoods(document.getElementById("snackFoods").value, "snacks")
   };
 
-  const child = {
+  pendingChild = {
     id: crypto.randomUUID(),
     name: document.getElementById("childName").value.trim(),
     dob,
@@ -141,12 +168,54 @@ childForm.addEventListener("submit", (event) => {
     outcomes: {}
   };
 
-  child.chains = buildAllChains(child);
-  state.kids.push(child);
+  showChildConfirmStep(pendingChild);
+});
+
+confirmAddChildBtn.addEventListener("click", () => {
+  if (!pendingChild) return;
+  pendingChild.chains = buildAllChains(pendingChild);
+  state.kids.push(pendingChild);
   saveState();
-  childForm.reset();
-  childDobInput.max = getTodayIsoDate();
   render();
+  renderOnboardingChildrenSummary();
+
+  const addedName = pendingChild.name || "your child";
+  closeAddChildDialog();
+  triggerCelebrations([{ title: "Child added!", message: `${addedName} is ready for playful food chains.`, emoji: "🎉" }]);
+});
+
+backToChildFormBtn.addEventListener("click", () => {
+  showChildFormStep();
+});
+
+cancelAddChildBtn.addEventListener("click", () => {
+  closeAddChildDialog();
+});
+
+openAddChildBtn.addEventListener("click", () => {
+  openAddChildDialog();
+});
+
+addChildDialog.addEventListener("close", () => {
+  pendingChild = null;
+  childForm.reset();
+  showChildFormStep();
+});
+
+onboardingAddChildBtn.addEventListener("click", () => {
+  openAddChildDialog();
+});
+
+onboardingContinueBtn.addEventListener("click", () => {
+  if (!state.parent.name) {
+    onboardingParentNameInput.setCustomValidity("Save your parent profile first.");
+    onboardingParentNameInput.reportValidity();
+    return;
+  }
+  onboardingParentNameInput.setCustomValidity("");
+  state.onboardingComplete = true;
+  saveState();
+  renderOnboardingGate();
 });
 
 exportPdfBtn.addEventListener("click", () => {
@@ -160,8 +229,67 @@ pageTabs.forEach((button) => {
 });
 
 window.addEventListener("hashchange", () => {
-  setCurrentPage(window.location.hash === "#achievements" ? "achievements" : "planner", { syncHash: false });
+  setCurrentPage(window.location.hash === "#planner" ? "planner" : "achievements", { syncHash: false });
 });
+
+function openAddChildDialog() {
+  pendingChild = null;
+  childForm.reset();
+  childDobInput.max = getTodayIsoDate();
+  showChildFormStep();
+  if (typeof addChildDialog.showModal === "function") {
+    addChildDialog.showModal();
+  } else {
+    addChildDialog.setAttribute("open", "");
+  }
+}
+
+function closeAddChildDialog() {
+  pendingChild = null;
+  childForm.reset();
+  showChildFormStep();
+  if (typeof addChildDialog.close === "function") {
+    addChildDialog.close();
+  } else {
+    addChildDialog.removeAttribute("open");
+  }
+}
+
+function showChildFormStep() {
+  childFormStep.hidden = false;
+  childConfirmStep.hidden = true;
+}
+
+function showChildConfirmStep(child) {
+  const acceptedCount = MEALS.reduce((total, meal) => total + child.acceptedFoods[meal].length, 0);
+  childConfirmSummary.innerHTML = `
+    <p><strong>${escapeHtml(child.name || "This child")}</strong> · ${escapeHtml(getChildAgeSummary(child))}</p>
+    <p class="list-muted">${child.neurodivergent ? "Neurodivergent support on" : "Standard support"} · Allergies: ${child.allergies.length ? child.allergies.map(escapeHtml).join(", ") : "None listed"}</p>
+    <p class="list-muted">${acceptedCount} accepted food${acceptedCount === 1 ? "" : "s"} will seed this child's food chains.</p>
+  `;
+  childFormStep.hidden = true;
+  childConfirmStep.hidden = false;
+}
+
+function renderOnboardingGate() {
+  const showOnboarding = !state.onboardingComplete;
+  onboardingPage.hidden = !showOnboarding;
+  document.querySelector(".page-shell").hidden = showOnboarding;
+  if (showOnboarding) {
+    onboardingParentNameInput.value = state.parent.name || "";
+    renderOnboardingChildrenSummary();
+  }
+}
+
+function renderOnboardingChildrenSummary() {
+  if (!onboardingChildrenSummary) return;
+  if (!state.kids.length) {
+    onboardingChildrenSummary.innerHTML = `<p class="list-muted">No children added yet.</p>`;
+    return;
+  }
+  onboardingChildrenSummary.innerHTML = `<p><strong>Children added:</strong> ${state.kids.map((kid) => escapeHtml(kid.name)).join(", ")}</p>`;
+}
+
 
 function parseFoods(input, meal) {
   return input
@@ -345,6 +473,7 @@ function defaultState() {
   return {
     parent: { name: "" },
     kids: [],
+    onboardingComplete: false,
     game: {
       totalLogs: 0,
       streakDays: 0,
@@ -360,6 +489,7 @@ function normalizeState(rawState) {
   const nextState = {
     parent: { name: rawState?.parent?.name || "" },
     kids: Array.isArray(rawState?.kids) ? rawState.kids.map(normalizeChild) : [],
+    onboardingComplete: rawState?.onboardingComplete === true || Boolean(rawState?.parent?.name) || (Array.isArray(rawState?.kids) && rawState.kids.length > 0),
     game: {
       ...base.game,
       ...(rawState?.game || {})
@@ -910,7 +1040,7 @@ function getChildAgeSummary(child) {
 }
 
 function isValidDob(dob) {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dob)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return false;
   const [yearText, monthText, dayText] = dob.split("-");
   const year = Number(yearText);
   const month = Number(monthText);
