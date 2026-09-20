@@ -240,6 +240,14 @@ main {
   box-shadow: 0 24px 55px rgba(36, 31, 57, 0.16);
 }
 
+.card-feature:focus,
+.card-feature:focus-visible,
+.child-card:focus,
+.child-card:focus-visible,
+.chain-row:focus,
+.chain-row:focus-visible,
+.glass-panel:focus,
+.glass-panel:focus-visible,
 .card-feature:focus-within,
 .child-card:focus-within,
 .chain-row:focus-within,

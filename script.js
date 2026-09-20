@@ -402,21 +402,31 @@ function renderReportPreview() {
      <div class="report-grid">
      ${state.kids.map((child) => {
       const meals = ["breakfast", "lunch", "dinner", "snacks"];
+      const acceptedFoodsMarkup = meals.map((meal) => {
+        const foods = child.acceptedFoods[meal] || [];
+        const acceptedText = foods.length
+          ? foods.map((food) => escapeHtml(food.name)).join(", ")
+          : "None listed";
+        return `<li><strong>Accepted ${capitalize(meal)}:</strong> ${acceptedText}</li>`;
+      }).join("");
       const chainsMarkup = meals.map((meal) => {
         const chains = child.chains[meal] || [];
+        const chainItems = chains.length
+          ? chains.map((chain, idx) => {
+            const key = `${child.id}:${meal}:${idx}`;
+            const progress = child.outcomes[key] || chain.steps.map(() => -1);
+            return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<div class="report-detail">Stages: ${progress.map((value) => escapeHtml(value >= 0 ? STAGES[value] : "not started")).join(" | ")}</div></li>`;
+          }).join("")
+          : "<li><strong>No chains yet.</strong></li>";
         return `
         <h4>${capitalize(meal)}</h4>
         <ul class="report-list">
-            ${chains.map((chain, idx) => {
-              const key = `${child.id}:${meal}:${idx}`;
-              const progress = child.outcomes[key] || chain.steps.map(() => -1);
-              return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<div class="report-detail">Stages: ${progress.map((value) => escapeHtml(value >= 0 ? STAGES[value] : "not started")).join(" | ")}</div></li>`;
-            }).join("")}
+            ${chainItems}
           </ul>
         `;
       }).join("");
 
-      return `<article class="report-card"><h3>${escapeHtml(child.name)}</h3>${chainsMarkup}</article>`;
+      return `<article class="report-card"><h3>${escapeHtml(child.name)}</h3><ul class="report-list">${acceptedFoodsMarkup}</ul>${chainsMarkup}</article>`;
     }).join("")}
      </div>
      <article class="report-card">
