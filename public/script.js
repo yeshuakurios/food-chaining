@@ -123,10 +123,10 @@ childForm.addEventListener("submit", (event) => {
   childDobInput.setCustomValidity("");
 
   const meals = {
-    breakfast: parseFoods(document.getElementById("breakfastFoods").value),
-    lunch: parseFoods(document.getElementById("lunchFoods").value),
-    dinner: parseFoods(document.getElementById("dinnerFoods").value),
-    snacks: parseFoods(document.getElementById("snackFoods").value)
+    breakfast: parseFoods(document.getElementById("breakfastFoods").value, "breakfast"),
+    lunch: parseFoods(document.getElementById("lunchFoods").value, "lunch"),
+    dinner: parseFoods(document.getElementById("dinnerFoods").value, "dinner"),
+    snacks: parseFoods(document.getElementById("snackFoods").value, "snacks")
   };
 
   const child = {
@@ -163,16 +163,16 @@ window.addEventListener("hashchange", () => {
   setCurrentPage(window.location.hash === "#achievements" ? "achievements" : "planner", { syncHash: false });
 });
 
-function parseFoods(input) {
+function parseFoods(input, meal) {
   return input
     .split(",")
     .map((piece) => piece.trim())
     .filter(Boolean)
-    .map(parseFoodEntry)
+    .map((entry) => parseFoodEntry(entry, meal))
     .filter((entry) => entry.name);
 }
 
-function parseFoodEntry(entry) {
+function parseFoodEntry(entry, meal) {
   if (entry.includes("|")) {
     const [name, brand = "", pref = "3"] = entry.split("|").map((x) => x.trim());
     return { name, brand, preference: clampPreference(pref) };
@@ -218,13 +218,13 @@ function parseFoodEntry(entry) {
   const baseName = values.slice(0, -1).join(" ").trim();
   const brand = values[values.length - 1].trim();
 
-  if (findFoodItem(baseName) && !findFoodItem(fullName)) {
+  if (findFoodItem(baseName, meal) && !findFoodItem(fullName, meal)) {
     return { name: baseName, brand, preference };
   }
 
   if (values.length === 2) {
     const hasQuotedBoundary = tokens[0].quoted || tokens[1].quoted;
-    if (findFoodItem(values[0]) || hasQuotedBoundary) {
+    if (findFoodItem(values[0], meal) || hasQuotedBoundary) {
       return { name: values[0].trim(), brand, preference };
     }
     return { name: fullName, brand: "", preference };
@@ -790,7 +790,8 @@ function renderPageView() {
   pageTabs.forEach((button) => {
     const isActive = button.dataset.page === currentPage;
     button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
+    button.setAttribute("aria-selected", String(isActive));
+    button.tabIndex = isActive ? 0 : -1;
   });
 }
 
@@ -862,7 +863,7 @@ function renderCelebrationMarkup(celebration) {
   const confetti = Array.from({ length: 18 }, (_, index) => `<span class="confetti-piece confetti-${(index % 6) + 1}"></span>`).join("");
   return `
     <div class="celebration-confetti" aria-hidden="true">${confetti}</div>
-    <div class="celebration-card">
+    <div class="celebration-card" role="status" aria-live="assertive" aria-label="Celebration">
       <div class="celebration-emoji" aria-hidden="true">${celebration.emoji}</div>
       <strong>${escapeHtml(celebration.title)}</strong>
       <p>${escapeHtml(celebration.message)}</p>

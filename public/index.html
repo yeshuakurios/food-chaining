@@ -39,14 +39,14 @@
               <p>Only the parent&apos;s effort earns rewards here — kids never receive scores.</p>
             </div>
             <div class="page-toggle" role="tablist" aria-label="App pages">
-              <button type="button" class="page-tab is-active" data-page="planner" aria-pressed="true">Planner</button>
-              <button type="button" class="page-tab" data-page="achievements" aria-pressed="false">Achievements</button>
+              <button type="button" class="page-tab is-active" id="plannerTab" role="tab" data-page="planner" aria-selected="true" aria-controls="plannerPage">Planner</button>
+              <button type="button" class="page-tab" id="achievementsTab" role="tab" data-page="achievements" aria-selected="false" aria-controls="achievementsPage">Achievements</button>
             </div>
           </div>
           <div id="topQuestPanel"></div>
         </section>
 
-        <div id="plannerPage" class="page-view">
+        <div id="plannerPage" class="page-view" role="tabpanel" aria-labelledby="plannerTab">
           <section class="card card-feature" id="onboarding">
             <div class="section-head">
               <div>
@@ -166,7 +166,7 @@
           </section>
         </div>
 
-        <div id="achievementsPage" class="page-view" hidden>
+        <div id="achievementsPage" class="page-view" role="tabpanel" aria-labelledby="achievementsTab" hidden>
           <section class="card card-feature" id="gameification">
             <div class="section-head">
               <div>
