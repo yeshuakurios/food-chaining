@@ -184,25 +184,53 @@ function parseFoodEntry(entry) {
   }
 
   let preference = 3;
+  let hasExplicitScore = false;
   const lastToken = tokens[tokens.length - 1];
   if (/^[1-5]$/.test(lastToken)) {
+    hasExplicitScore = true;
     preference = clampPreference(lastToken);
     tokens.pop();
   }
 
-  let brand = "";
-  if (tokens.length > 1) {
-    const brandCandidate = tokens[tokens.length - 1];
-    const hasQuotedSegment = /["']/.test(entry);
-    if (!findFoodItem(tokens.join(" ")) && (findFoodItem(tokens.slice(0, -1).join(" ")) || hasQuotedSegment)) {
-      brand = brandCandidate;
-      tokens.pop();
+  if (!tokens.length) {
+    return { name: "", brand: "", preference };
+  }
+
+  if (!hasExplicitScore) {
+    return {
+      name: tokens.join(" ").trim(),
+      brand: "",
+      preference
+    };
+  }
+
+  if (tokens.length === 1) {
+    return {
+      name: tokens[0],
+      brand: "",
+      preference
+    };
+  }
+
+  const fullName = tokens.join(" ").trim();
+  const baseName = tokens.slice(0, -1).join(" ").trim();
+  const brand = tokens[tokens.length - 1].trim();
+
+  if (findFoodItem(baseName) && !findFoodItem(fullName)) {
+    return { name: baseName, brand, preference };
+  }
+
+  if (tokens.length === 2) {
+    const startsWithQuote = /^['"]/.test(entry.trim());
+    if (findFoodItem(tokens[0]) || startsWithQuote) {
+      return { name: tokens[0].trim(), brand, preference };
     }
+    return { name: fullName, brand: "", preference };
   }
 
   return {
-    name: tokens.join(" ").trim(),
-    brand: brand.trim(),
+    name: fullName,
+    brand: "",
     preference
   };
 }
@@ -869,7 +897,11 @@ function isValidDob(dob) {
 }
 
 function getTodayIsoDate() {
-  return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function formatDateForDisplay(value) {
