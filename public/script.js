@@ -179,51 +179,53 @@ function parseFoodEntry(entry) {
   }
 
   const tokens = tokenizeFoodEntry(entry);
-  if (!tokens.length) {
+  const values = tokens.map((token) => token.value);
+  if (!values.length) {
     return { name: "", brand: "", preference: 3 };
   }
 
   let preference = 3;
   let hasExplicitScore = false;
-  const lastToken = tokens[tokens.length - 1];
+  const lastToken = values[values.length - 1];
   if (/^[1-5]$/.test(lastToken)) {
     hasExplicitScore = true;
     preference = clampPreference(lastToken);
     tokens.pop();
+    values.pop();
   }
 
-  if (!tokens.length) {
+  if (!values.length) {
     return { name: "", brand: "", preference };
   }
 
   if (!hasExplicitScore) {
     return {
-      name: tokens.join(" ").trim(),
+      name: values.join(" ").trim(),
       brand: "",
       preference
     };
   }
 
-  if (tokens.length === 1) {
+  if (values.length === 1) {
     return {
-      name: tokens[0],
+      name: values[0],
       brand: "",
       preference
     };
   }
 
-  const fullName = tokens.join(" ").trim();
-  const baseName = tokens.slice(0, -1).join(" ").trim();
-  const brand = tokens[tokens.length - 1].trim();
+  const fullName = values.join(" ").trim();
+  const baseName = values.slice(0, -1).join(" ").trim();
+  const brand = values[values.length - 1].trim();
 
   if (findFoodItem(baseName) && !findFoodItem(fullName)) {
     return { name: baseName, brand, preference };
   }
 
-  if (tokens.length === 2) {
-    const startsWithQuote = /^['"]/.test(entry.trim());
-    if (findFoodItem(tokens[0]) || startsWithQuote) {
-      return { name: tokens[0].trim(), brand, preference };
+  if (values.length === 2) {
+    const hasQuotedBoundary = tokens[0].quoted || tokens[1].quoted;
+    if (findFoodItem(values[0]) || hasQuotedBoundary) {
+      return { name: values[0].trim(), brand, preference };
     }
     return { name: fullName, brand: "", preference };
   }
@@ -237,7 +239,12 @@ function parseFoodEntry(entry) {
 
 function tokenizeFoodEntry(entry) {
   const matches = entry.match(/"([^"]+)"|'([^']+)'|\S+/g) || [];
-  return matches.map((token) => token.replace(/^['"]|['"]$/g, "").trim()).filter(Boolean);
+  return matches
+    .map((token) => ({
+      value: token.replace(/^['"]|['"]$/g, "").trim(),
+      quoted: /^['"]/.test(token) && /['"]$/.test(token)
+    }))
+    .filter((token) => token.value);
 }
 
 function clampPreference(value) {
@@ -829,12 +836,15 @@ function triggerCelebrations(celebrations) {
   if (!celebrations.length || !celebrationLayer) return;
   celebrationLayer.innerHTML = "";
   celebrationLayer.classList.add("is-active");
+  celebrationLayer.classList.remove("is-visible");
   celebrationTimeouts.forEach((timeoutId) => window.clearTimeout(timeoutId));
   celebrationTimeouts = [];
 
   celebrations.forEach((celebration, index) => {
     const timeoutId = window.setTimeout(() => {
+      celebrationLayer.classList.remove("is-visible");
       celebrationLayer.innerHTML = renderCelebrationMarkup(celebration);
+      void celebrationLayer.offsetWidth;
       celebrationLayer.classList.add("is-visible");
     }, index * 2300);
     celebrationTimeouts.push(timeoutId);
@@ -890,9 +900,14 @@ function getChildAgeSummary(child) {
 }
 
 function isValidDob(dob) {
-  if (!dob) return false;
-  const parsed = new Date(`${dob}T00:00:00`);
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dob)) return false;
+  const [yearText, monthText, dayText] = dob.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const parsed = new Date(year, month - 1, day);
   if (Number.isNaN(parsed.getTime())) return false;
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) return false;
   return dob <= getTodayIsoDate();
 }
 
