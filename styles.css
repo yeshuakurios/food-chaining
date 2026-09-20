@@ -720,10 +720,26 @@ small {
     scroll-behavior: auto;
   }
 
-  *,
-  *::before,
-  *::after {
+  .bg-orb,
+  .hero-copy::after,
+  .hero-copy,
+  .hero-panel,
+  .card,
+  .card-feature,
+  .child-card,
+  .chain-row,
+  .glass-panel,
+  button,
+  button::after {
     animation: none !important;
+  }
+
+  .card-feature,
+  .child-card,
+  .chain-row,
+  .glass-panel,
+  button,
+  button::after {
     transition: none !important;
   }
 }
