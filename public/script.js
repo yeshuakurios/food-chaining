@@ -217,6 +217,15 @@ function parseFoodEntry(entry, meal) {
   const fullName = values.join(" ").trim();
   const baseName = values.slice(0, -1).join(" ").trim();
   const brand = values[values.length - 1].trim();
+  const hasQuotedFoodBoundary = tokens[0].quoted && values.length >= 2;
+
+  if (hasQuotedFoodBoundary) {
+    return {
+      name: values[0].trim(),
+      brand: values.slice(1).join(" ").trim(),
+      preference
+    };
+  }
 
   if (findFoodItem(baseName, meal) && !findFoodItem(fullName, meal)) {
     return { name: baseName, brand, preference };
@@ -922,6 +931,7 @@ function getTodayIsoDate() {
 
 function formatDateForDisplay(value) {
   if (!isValidDob(value)) return "";
+  // Stored DOB values are ISO YYYY-MM-DD strings; render them in the user's locale for on-screen and report display.
   return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",

@@ -801,6 +801,7 @@ small {
   place-items: center;
   padding: 1rem;
   pointer-events: none;
+  background: rgba(36, 31, 57, 0.18);
   opacity: 0;
   transition: opacity 180ms ease;
   z-index: 20;
