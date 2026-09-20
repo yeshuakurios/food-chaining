@@ -408,7 +408,7 @@ function renderReportPreview() {
             ${chains.map((chain, idx) => {
               const key = `${child.id}:${meal}:${idx}`;
               const progress = child.outcomes[key] || chain.steps.map(() => -1);
-              return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<br/>Stages: ${progress.map((value) => (value >= 0 ? STAGES[value] : "not started")).join(" | ")}</li>`;
+              return `<li><strong>${escapeHtml(chain.baseFood.name)}:</strong> ${chain.steps.map(escapeHtml).join(" → ")}<span class="report-detail">Stages: ${progress.map((value) => (value >= 0 ? STAGES[value] : "not started")).join(" | ")}</span></li>`;
             }).join("")}
           </ul>
         `;

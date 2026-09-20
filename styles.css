@@ -240,6 +240,14 @@ main {
   box-shadow: 0 24px 55px rgba(36, 31, 57, 0.16);
 }
 
+.card-feature:focus-within,
+.child-card:focus-within,
+.chain-row:focus-within,
+.glass-panel:focus-within {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 55px rgba(36, 31, 57, 0.16);
+}
+
 .card-feature,
 .child-card,
 .chain-row,
@@ -358,6 +366,15 @@ textarea:focus {
   outline: none;
   border-color: rgba(124, 92, 255, 0.4);
   box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(36, 31, 57, 0.18);
+  outline-offset: 2px;
+  border-color: rgba(124, 92, 255, 0.45);
+  box-shadow: 0 0 0 5px rgba(124, 92, 255, 0.14);
 }
 
 button:focus-visible {
@@ -564,6 +581,11 @@ small {
 .report-list li {
   margin-bottom: 0.6rem;
   color: var(--muted);
+}
+
+.report-detail {
+  display: block;
+  margin-top: 0.3rem;
 }
 
 .plan-list strong,
