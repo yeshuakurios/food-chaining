@@ -184,14 +184,18 @@ textarea {
 .hero-status,
 .quick-stats,
 .summary-grid,
-.quest-stats {
+.quest-stats,
+.quest-overview-grid,
+.achievement-grid,
+.achievement-columns {
   display: grid;
   gap: 0.9rem;
 }
 
 .hero-status,
 .quick-stats,
-.quest-stats {
+.quest-stats,
+.quest-overview-grid {
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
 
@@ -333,7 +337,8 @@ button {
 .meal-grid,
 .dashboard-grid,
 .child-sections,
-.report-grid {
+.report-grid,
+.page-view {
   display: grid;
   gap: 0.9rem;
 }
@@ -425,6 +430,29 @@ button:hover::after {
 
 button:hover {
   filter: saturate(1.08);
+}
+
+.page-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.page-tab {
+  width: auto;
+  min-width: 8.5rem;
+  margin-top: 0;
+  padding: 0.8rem 1.05rem;
+}
+
+.page-tab:not(.is-active) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 28px rgba(79, 60, 157, 0.1);
+}
+
+.page-tab.is-active {
+  background: linear-gradient(135deg, var(--secondary), var(--accent-strong));
 }
 
 small {
@@ -636,6 +664,112 @@ small {
   justify-content: space-between;
 }
 
+.quest-overview-shell,
+.level-progress-card,
+.achievement-panel,
+.achievement-card,
+.celebration-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.quest-overview-shell {
+  gap: 1rem;
+}
+
+.stat-card-highlight strong {
+  color: var(--accent-strong);
+}
+
+.level-progress-card,
+.achievement-panel {
+  padding: 1rem;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.level-progress-copy {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.level-progress-copy span,
+.achievement-card p {
+  color: var(--muted);
+}
+
+.level-progress-track {
+  width: 100%;
+  height: 0.8rem;
+  border-radius: 999px;
+  background: rgba(124, 92, 255, 0.12);
+  overflow: hidden;
+}
+
+.level-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--highlight), var(--accent));
+  box-shadow: 0 10px 20px rgba(255, 123, 84, 0.2);
+}
+
+.achievement-columns {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.achievement-panel h4 {
+  margin: 0 0 0.85rem;
+}
+
+.achievement-grid {
+  grid-template-columns: 1fr;
+}
+
+.achievement-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.95rem;
+  border-radius: 20px;
+  border: 1px solid rgba(124, 92, 255, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.achievement-card strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.achievement-card p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.achievement-card.is-unlocked {
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.24), rgba(255, 123, 84, 0.12));
+  border-color: rgba(255, 209, 102, 0.38);
+}
+
+.achievement-card.is-locked {
+  opacity: 0.72;
+}
+
+.achievement-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 16px;
+  background: rgba(124, 92, 255, 0.08);
+  font-size: 1.45rem;
+}
+
 .report-card {
   margin-top: 0.9rem;
 }
@@ -659,6 +793,78 @@ small {
   margin-top: 0;
   margin-bottom: 0.45rem;
 }
+
+.celebration-layer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  pointer-events: none;
+  background: rgba(36, 31, 57, 0.18);
+  opacity: 0;
+  transition: opacity 180ms ease;
+  z-index: 20;
+}
+
+.celebration-layer.is-active {
+  opacity: 1;
+}
+
+.celebration-layer.is-visible .celebration-card {
+  animation: celebrationPop 420ms ease both;
+}
+
+.celebration-card {
+  width: min(100%, 26rem);
+  padding: 1.4rem 1.2rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  background: linear-gradient(145deg, rgba(36, 31, 57, 0.94), rgba(124, 92, 255, 0.9));
+  color: #fff;
+  box-shadow: 0 28px 60px rgba(36, 31, 57, 0.34);
+  text-align: center;
+}
+
+.celebration-card strong {
+  display: block;
+  font-size: 1.3rem;
+  margin-bottom: 0.45rem;
+}
+
+.celebration-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.6;
+}
+
+.celebration-emoji {
+  font-size: 2.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.celebration-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -10%;
+  width: 0.7rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  opacity: 0.8;
+  animation: confettiFall 1.7s linear forwards;
+}
+
+.confetti-1 { left: 10%; background: #ffd166; animation-delay: 0s; }
+.confetti-2 { left: 22%; background: #7c5cff; animation-delay: 0.1s; }
+.confetti-3 { left: 34%; background: #ff7b54; animation-delay: 0.2s; }
+.confetti-4 { left: 52%; background: #ff5d7a; animation-delay: 0.05s; }
+.confetti-5 { left: 70%; background: #2eaa78; animation-delay: 0.15s; }
+.confetti-6 { left: 84%; background: #ffd166; animation-delay: 0.25s; }
 
 @keyframes riseIn {
   from {
@@ -687,6 +893,26 @@ small {
   }
 }
 
+@keyframes celebrationPop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(0, 110vh, 0) rotate(540deg);
+  }
+}
+
 @media (max-width: 920px) {
   .hero {
     grid-template-columns: 1fr;
@@ -695,6 +921,10 @@ small {
 
   .section-head {
     align-items: start;
+  }
+
+  .level-progress-copy {
+    flex-direction: column;
   }
 }
 
@@ -710,6 +940,15 @@ small {
 
   .hero h1 {
     font-size: 2.5rem;
+  }
+
+  .page-toggle {
+    width: 100%;
+  }
+
+  .page-tab {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }
 
@@ -728,7 +967,9 @@ small {
   .chain-row,
   .glass-panel,
   button,
-  button::after {
+  button::after,
+  .celebration-card,
+  .confetti-piece {
     animation: none !important;
   }
 
@@ -737,7 +978,8 @@ small {
   .chain-row,
   .glass-panel,
   button,
-  button::after {
+  button::after,
+  .celebration-layer {
     transition: none !important;
   }
 }
@@ -748,8 +990,10 @@ small {
   #childForm,
   #onboarding .section-head,
   #onboarding small,
-  #gameification button,
-  #exportPdf {
+  #questSummary,
+  #exportPdf,
+  .page-toggle,
+  .celebration-layer {
     display: none !important;
   }
 

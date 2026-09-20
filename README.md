@@ -7,21 +7,21 @@ A playful web app to help parents generate food chains for kids based on accepte
 - Onboarding for one parent and multiple kids
 - Per child capture of:
   - name
-  - age
+  - date of birth with age calculated over time
   - gender
   - neurodivergence (yes/no)
   - ingredient allergies
   - accepted foods by breakfast/lunch/dinner/snacks
-  - optional brand and preference score for accepted foods
+  - optional brand and familiarity score for accepted foods using comma-separated entries
 - 5-step food chains per accepted food and per meal category
 - Daily plans per child
 - Outcome progression sequence:
   - touch → play with → smell → lick → nibble → bite → swallow → ate
 - Parent-only gamification rewarding effort logging
-  - points
+  - XP and levels
   - streaks
-  - badges
-  - cool level titles
+  - achievements
+  - animated celebrations
 - Full report export via browser print-to-PDF
 
 ## Run locally
